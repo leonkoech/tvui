@@ -29,10 +29,10 @@ It needs Python 3.8+ and has no other dependencies.
 ## Install
 
 ```bash
-pip install git+https://github.com/leonkipkoech/tvui.git
+pip install git+https://github.com/leonkoech/tvui.git
 ```
 
-On Ubuntu 23.04+ or Debian 12+, use `pipx install git+https://github.com/leonkipkoech/tvui.git` instead.
+On Ubuntu 23.04+ or Debian 12+, use `pipx install git+https://github.com/leonkoech/tvui.git` instead.
 
 ## Set up
 
