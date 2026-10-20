@@ -117,15 +117,16 @@ function send(path, btn) {
   btn.classList.add("hit");
   setTimeout(function () { btn.classList.remove("hit"); }, 130);
   fetch(path).then(function (r) {
-    if (r.ok) { msg.textContent = ""; return; }
     return r.json().then(function (j) {
-      msg.textContent = /Roku blocks/.test(j.error || "") ? j.error : "The TV didn't respond";
+      var problem = r.ok ? j.warn : j.error;
+      msg.textContent = !problem ? "" : /Roku blocks/.test(problem) ? problem : "The TV didn't respond";
     });
   }).catch(function () { msg.textContent = "Can't reach tvui. Is the server on?"; });
 }
 
 document.querySelectorAll("button").forEach(function (b) {
-  b.addEventListener("click", function () {
+  b.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
     var k = b.getAttribute("data-k");
     if (b.hasAttribute("data-home")) return send("/api/home", b);
     if (k === "PlayPause") { k = playing ? "Pause" : "Play"; playing = !playing; }

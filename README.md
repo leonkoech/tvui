@@ -156,8 +156,9 @@ Prime apps may no longer work. YouTube, for example, shows "page is too large
 to be displayed". If you have a Roku, use `roku` tiles instead: YouTube is
 `837`, Netflix `12`, Prime Video `13`, and Crunchyroll `2595`.
 
-Netflix, YouTube, Prime Video, Roku, Crunchyroll, and Laptop tiles show their
-logos. Hulu, Disney+, Plex, and Max tiles get their brand colours. Any other
+Netflix, YouTube, Prime Video, Roku, and Crunchyroll tiles show their logos, and a
+Laptop tile shows the Windows logo. The name appears under the selected tile.
+Hulu, Disney+, Plex, and Max tiles get their brand colours. Any other
 tile gets a neutral card. Reorder, rename, or remove tiles, then restart tvui.
 To rebuild the list from scratch, run `tvui setup` again.
 

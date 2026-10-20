@@ -1,6 +1,7 @@
 """HTTP server: home screen for the TV, remote for phones, and an API relay."""
 import json
 import os
+import queue
 import threading
 import time
 import urllib.error
@@ -26,22 +27,24 @@ RENEW_EVERY = 24 * 3600  # pairing cookies last ~14 days; renew daily
 
 def make_handler(cfg, tv):
     def act(path, q):
-        if path != "/api/key":
-            watching["at"] = 0  # the input is about to change
         if path == "/api/tile":
             t = cfg["tiles"][int(q["i"])]
             if t["action"] == "app":
+                watching["uri"] = None
                 tv.launch(t["value"])
             elif t["action"] == "input":
+                watching["uri"] = t["value"]
                 tv.set_input(t["value"])
             elif t["action"] == "key":
                 tv.key(t["value"])
             elif t["action"] == "roku":
+                watching["uri"] = t["input"]
                 tv.set_input(t["input"])
                 launch_on_roku(t["value"])
         elif path == "/api/key":
             press(q["name"])
         elif path == "/api/home":
+            watching["uri"] = None
             tv.open_url(q["url"])
 
     def on_roku(fn, *args):
@@ -64,16 +67,20 @@ def make_handler(cfg, tv):
         return cfg.get("roku_input") or next(
             (t["input"] for t in cfg["tiles"] if t["action"] == "roku"), None)
 
-    watching = {"uri": None, "at": 0.0}
+    # The TV's current input, refreshed in the background so a key press never waits on it.
+    watching = {"uri": None}
 
-    def watching_roku():
-        """Whether the TV is showing the Roku's input (cached briefly so key presses stay fast)."""
-        if time.time() - watching["at"] > 2:
+    def track_input():
+        while True:
             try:
                 watching["uri"] = tv.rpc("avContent", "getPlayingContentInfo")[0].get("uri")
             except Exception:
                 watching["uri"] = None  # e.g. the tvui home screen, which has no input
-            watching["at"] = time.time()
+            time.sleep(1.5)
+
+    threading.Thread(target=track_input, daemon=True).start()
+
+    def watching_roku():
         return roku_input() is not None and watching["uri"] == roku_input()
 
     def press(name):
@@ -104,6 +111,19 @@ def make_handler(cfg, tv):
             config.save(cfg)
             act(path, q)
 
+    keys, key_error = queue.Queue(), {"msg": None}
+
+    def key_worker():
+        while True:
+            name = keys.get()
+            try:
+                act_or_rediscover("/api/key", {"name": name})
+            except Exception as e:
+                key_error["msg"] = str(e)
+                print(f"key {name} failed: {e}", flush=True)
+
+    threading.Thread(target=key_worker, daemon=True).start()
+
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code, body, ctype="application/json"):
             data = body if isinstance(body, bytes) else body.encode()
@@ -130,6 +150,10 @@ def make_handler(cfg, tv):
                 return self._send(404, '{"error":"not found"}')
             if url.path == "/api/key" and q.get("name") not in IRCC:
                 return self._send(400, '{"error":"unknown key"}')
+            if url.path == "/api/key":
+                keys.put(q["name"])
+                warn, key_error["msg"] = key_error["msg"], None  # report the last failure, if any
+                return self._send(200, json.dumps({"ok": True, "warn": warn} if warn else {"ok": True}))
             if url.path == "/api/home":
                 q["url"] = f"http://{self.headers['Host']}/"
             try:

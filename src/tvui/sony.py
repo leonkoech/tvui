@@ -1,7 +1,9 @@
 """Sony Bravia network control: discovery, pairing, JSON-RPC and IRCC keys."""
+import http.client
 import json
 import re
 import socket
+import threading
 import urllib.error
 import urllib.request
 
@@ -62,6 +64,30 @@ def discover(timeout=4, pattern=r"SERVER:.*?(K[DL]{1,2}-\w+|XBR-\w+)"):
 class TV:
     def __init__(self, ip, auth="", psk=""):
         self.ip, self.auth, self.psk = ip, auth, psk
+        # One kept-alive connection: a fresh TCP connection per request costs the
+        # TV 100-500ms, a reused one a steady ~100ms.
+        self._conn, self._conn_ip = None, None
+        self._lock = threading.Lock()
+
+    def _post(self, path, body, headers):
+        with self._lock:
+            for attempt in (1, 2):
+                if self._conn is None or self._conn_ip != self.ip:
+                    self._conn = http.client.HTTPConnection(self.ip, 80, timeout=8)
+                    self._conn_ip = self.ip
+                try:
+                    self._conn.request("POST", path, body, headers)
+                    r = self._conn.getresponse()
+                    data = r.read()
+                    break
+                except (http.client.HTTPException, OSError):
+                    self._conn.close()
+                    self._conn = None
+                    if attempt == 2:
+                        raise
+        if r.status != 200:
+            raise urllib.error.HTTPError(f"http://{self.ip}{path}", r.status, r.reason, r.headers, None)
+        return data
 
     def _headers(self, extra=None):
         h = {}
@@ -74,11 +100,8 @@ class TV:
 
     def rpc(self, service, method, params=None, version="1.0"):
         body = json.dumps({"method": method, "params": params or [], "id": 1, "version": version})
-        req = urllib.request.Request(
-            f"http://{self.ip}/sony/{service}", data=body.encode(),
-            headers=self._headers({"Content-Type": "application/json"}))
-        with urllib.request.urlopen(req, timeout=8) as r:
-            res = json.loads(r.read())
+        res = json.loads(self._post(f"/sony/{service}", body.encode(),
+                                    self._headers({"Content-Type": "application/json"})))
         if "error" in res:
             raise RuntimeError(f"{service}.{method}: {res['error']}")
         return res.get("result", [])
@@ -113,12 +136,9 @@ class TV:
             's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>'
             '<u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1">'
             f"<IRCCCode>{IRCC[name]}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>")
-        req = urllib.request.Request(
-            f"http://{self.ip}/sony/IRCC", data=soap.encode(),
-            headers=self._headers({
-                "Content-Type": "text/xml; charset=UTF-8",
-                "SOAPACTION": '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}))
-        urllib.request.urlopen(req, timeout=8).read()
+        self._post("/sony/IRCC", soap.encode(), self._headers({
+            "Content-Type": "text/xml; charset=UTF-8",
+            "SOAPACTION": '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}))
 
     def power(self):
         """"active", "standby", or "off" when the TV doesn't answer (network sleeps in standby)."""
