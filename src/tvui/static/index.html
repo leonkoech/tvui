@@ -11,30 +11,34 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 700; src: url(/instrument-sans-700.woff2) format("woff2"), url(/instrument-sans-700.woff) format("woff"); }
 
   /* Sized in rem; the script scales 1rem to the screen (16px at 1280 wide). */
-  html, body { margin: 0; height: 100%; background: #0a0a0c; color: #fff; overflow: hidden;
+  /* Pastel wash (pre-blurred bg.jpg, no CSS filters) under plum scrims that keep text readable. */
+  html, body { margin: 0; height: 100%; color: #fff; overflow: hidden;
     font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
-  #bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-    -webkit-transition: background-color .5s; transition: background-color .5s; }
+  body { background-color: #e9cfd8; background-image: url(/bg.jpg); background-position: center;
+    background-repeat: no-repeat; -webkit-background-size: cover; background-size: cover; }
+  #bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; opacity: .18;
+    -webkit-transition: background-color .4s; transition: background-color .4s; }
   #shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-    background: -webkit-linear-gradient(left, rgba(10,10,12,.96) 0%, rgba(10,10,12,.55) 60%, rgba(10,10,12,.25) 100%);
-    background: linear-gradient(to right, rgba(10,10,12,.96) 0%, rgba(10,10,12,.55) 60%, rgba(10,10,12,.25) 100%); }
-  #fade { position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
-    background: -webkit-linear-gradient(top, rgba(10,10,12,0), rgba(10,10,12,.95));
-    background: linear-gradient(to bottom, rgba(10,10,12,0), rgba(10,10,12,.95)); }
+    background: -webkit-linear-gradient(left, rgba(61,15,72,.82) 0%, rgba(61,15,72,.38) 55%, rgba(61,15,72,0) 100%);
+    background: linear-gradient(to right, rgba(61,15,72,.82) 0%, rgba(61,15,72,.38) 55%, rgba(61,15,72,0) 100%); }
+  #fade { position: absolute; left: 0; right: 0; bottom: 0; height: 48%;
+    background: -webkit-linear-gradient(top, rgba(40,10,50,0), rgba(40,10,50,.82));
+    background: linear-gradient(to bottom, rgba(40,10,50,0), rgba(40,10,50,.82)); }
 
-  .top { position: absolute; left: 2.5rem; right: 2.5rem; top: 1.6rem; font-size: 1.1rem; }
-  .top .date { float: right; color: rgba(255,255,255,.6); }
+  .top { position: absolute; left: 2.5rem; right: 2.5rem; top: 1.6rem; font-size: 1.1rem;
+    color: rgba(255,255,255,.72); text-shadow: 0 .1rem .8rem rgba(40,10,50,.6); }
+  .top .date { float: right; }
 
   .side { position: absolute; left: 1.6rem; top: 11rem; width: 2.6rem; }
-  .side div { width: 2.6rem; height: 2.6rem; margin-bottom: 1.4rem; border-radius: .7rem;
-    text-align: center; opacity: .55; }
-  .side div.cur { opacity: 1; }
+  .side div { width: 2.6rem; height: 2.6rem; margin-bottom: 1.4rem; border-radius: 1rem;
+    text-align: center; background: rgba(255,255,255,.14); }
   .side div.cur:after { content: ""; display: block; width: 1.2rem; height: .16rem;
-    margin: .25rem auto 0; background: #ff2d55; border-radius: .1rem; }
-  .side div.on { opacity: 1; background: rgba(255,255,255,.18); }
+    margin: .55rem auto 0; background: #F6D6E1; border-radius: .1rem; }
+  .side div.on { background: #fff; }
+  .side div.on svg { stroke: #5b2a6e; }
   .side svg { width: 1.4rem; height: 1.4rem; margin-top: .6rem; }
 
-  .hero { position: absolute; left: 6.5rem; top: 10rem; width: 34rem; }
+  .hero { position: absolute; left: 6.5rem; top: 10rem; width: 34rem; text-shadow: 0 .1rem .8rem rgba(40,10,50,.55); }
   .hero h1 { margin: 0; font-size: 3.2rem; font-weight: 600; letter-spacing: -.05rem; }
   .hero p { margin: .7rem 0 1.4rem; font-size: 1.05rem; line-height: 1.5; color: rgba(255,255,255,.75); }
   .hero .btn { display: inline-block; padding: .6rem 1.3rem; border-radius: .4rem;
@@ -49,10 +53,10 @@
     line-height: 6.24rem; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03rem;
     background-size: cover; background-position: center; opacity: .82;
     -webkit-transition: -webkit-transform .18s, opacity .18s; transition: transform .18s, opacity .18s; }
-  /* Focused: lift, white ring, and a glow in the app's own color */
-  .cell.on .tile { opacity: 1; -webkit-transform: scale(1.12); transform: scale(1.12); }
-  .cap { margin-top: 1.05rem; font-size: .85rem; color: rgba(255,255,255,.8); visibility: hidden; }
-  .cell.on .cap { visibility: visible; }
+  /* Focused: lift, blush ring, pink glow tinged with the app's color */
+  .cell.on .tile { opacity: 1; -webkit-transform: scale(1.08); transform: scale(1.08); }
+  .cap { margin-top: .9rem; font-size: .85rem; color: rgba(255,255,255,.75); visibility: hidden; }
+  .cell.on .cap { visibility: visible; color: #fff; }
 
   .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.5); }
 </style>
@@ -80,18 +84,18 @@
 })();
 
 // Known services get their logo tile (img) or brand colors; anything else gets a neutral card.
-// glow: page tint behind the hero; halo: focus glow around the tile.
+// halo: the app's color (r,g,b), used for the faint background tint and the focus glow.
 var BRANDS = {
-  netflix: { bg: "#000", fg: "#e50914", glow: "#5a0a0e", halo: "229,9,20", text: "NETFLIX", img: 1 },
-  youtube: { bg: "#fff", fg: "#ff0000", glow: "#4a1010", halo: "255,60,60", text: "YouTube", img: 1 },
-  prime:   { bg: "#0f171e", fg: "#00a8e1", glow: "#0b3550", halo: "0,168,225", text: "prime video", img: 1 },
-  roku:    { bg: "#6c1d7d", fg: "#fff", glow: "#3d0f48", halo: "170,70,200", text: "Roku", img: 1 },
-  crunchyroll: { bg: "#f47521", fg: "#fff", glow: "#5a2a0b", halo: "244,117,33", text: "crunchyroll", img: 1 },
-  laptop:  { bg: "#2b2b30", fg: "#fff", glow: "#24242c", halo: "200,200,215", text: "Laptop", img: 1 },
-  hulu:    { bg: "#0b0c0f", fg: "#1ce783", glow: "#0d4a2c", halo: "28,231,131", text: "hulu" },
-  disney:  { bg: "#0e1a5c", fg: "#fff", glow: "#0e1a5c", halo: "60,110,255", text: "Disney+" },
-  plex:    { bg: "#1f1f1f", fg: "#e5a00d", glow: "#4a3604", halo: "229,160,13", text: "plex" },
-  max:     { bg: "#002be7", fg: "#fff", glow: "#001a8c", halo: "40,90,255", text: "max" }
+  netflix: { bg: "#000", fg: "#e50914", halo: "229,9,20", text: "NETFLIX", img: 1 },
+  youtube: { bg: "#fff", fg: "#ff0000", halo: "255,60,60", text: "YouTube", img: 1 },
+  prime:   { bg: "#0f171e", fg: "#00a8e1", halo: "0,168,225", text: "prime video", img: 1 },
+  roku:    { bg: "#6c1d7d", fg: "#fff", halo: "170,70,200", text: "Roku", img: 1 },
+  crunchyroll: { bg: "#f47521", fg: "#fff", halo: "244,117,33", text: "crunchyroll", img: 1 },
+  laptop:  { bg: "#2b2b30", fg: "#fff", halo: "200,200,215", text: "Laptop", img: 1 },
+  hulu:    { bg: "#0b0c0f", fg: "#1ce783", halo: "28,231,131", text: "hulu" },
+  disney:  { bg: "#0e1a5c", fg: "#fff", halo: "60,110,255", text: "Disney+" },
+  plex:    { bg: "#1f1f1f", fg: "#e5a00d", halo: "229,160,13", text: "plex" },
+  max:     { bg: "#002be7", fg: "#fff", halo: "40,90,255", text: "max" }
 };
 var DESC = {
   input: "Switch the TV to this HDMI input.",
@@ -107,7 +111,7 @@ var side = document.getElementById("side").getElementsByTagName("div");
 function brand(name) {
   var k = name.toLowerCase();
   for (var b in BRANDS) if (k.indexOf(b) >= 0) { BRANDS[b].key = b; return BRANDS[b]; }
-  return { bg: "#26262b", fg: "#fff", glow: "#222228", halo: "200,200,215", text: name };
+  return { bg: "#26262b", fg: "#fff", halo: "200,200,215", text: name };
 }
 
 function get(path, done) {
@@ -142,7 +146,7 @@ function draw() {
     var on = !inSide && i === sel, h = brand(tiles[i].name).halo, t = n[i].firstChild;
     n[i].className = "cell" + (on ? " on" : "");
     t.style.boxShadow = t.style.webkitBoxShadow = on
-      ? "0 0 0 .2rem #fff, 0 0 1.6rem .3rem rgba(" + h + ",.65), 0 0 4rem 1rem rgba(" + h + ",.3)" : "none";
+      ? "0 0 0 .2rem #F6D6E1, 0 0 1.6rem .35rem rgba(246,214,225,.5), 0 0 3.6rem 1rem rgba(" + h + ",.28)" : "none";
   }
   for (var j = 0; j < side.length; j++)
     side[j].className = (j === 0 ? "cur" : "") + (inSide && j === sideSel ? " on" : "");
@@ -150,12 +154,12 @@ function draw() {
   var t = tiles[sel];
   document.getElementById("title").innerHTML = t.name;
   document.getElementById("desc").innerHTML = t.label || DESC[t.action] || "";
-  document.getElementById("bg").style.backgroundColor = brand(t.name).glow;
+  document.getElementById("bg").style.backgroundColor = "rgb(" + brand(t.name).halo + ")";
   // Scroll the row so the selected tile stays on screen (tile + gap = 12.2rem, ~6 fit).
   row.style.marginLeft = -Math.max(0, sel - 5) * 12.2 + "rem";
 }
 
-function open() {
+function launch() {
   if (inSide) {
     var a = side[sideSel].getAttribute("data-a");
     if (a === "menu") get("/api/key?name=Home");
@@ -171,7 +175,7 @@ function open() {
 
 document.onkeydown = function (e) {
   var k = e.keyCode, n = tiles.length;
-  if (k === 13) { open(); return false; }
+  if (k === 13) { launch(); return false; }
   if (inSide) {
     if (k === 38) sideSel = Math.max(0, sideSel - 1);
     else if (k === 40) sideSel = Math.min(side.length - 1, sideSel + 1);
