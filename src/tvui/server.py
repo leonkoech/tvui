@@ -18,7 +18,7 @@ ROKU_KEYS = {"Up": "Up", "Down": "Down", "Left": "Left", "Right": "Right",
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 PAGES = {"/": "index.html", "/remote": "remote.html"}
-TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png",
+TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg",
          ".json": "application/manifest+json", ".svg": "image/svg+xml",
          ".woff": "font/woff", ".woff2": "font/woff2"}
 RENEW_EVERY = 24 * 3600  # pairing cookies last ~14 days; renew daily

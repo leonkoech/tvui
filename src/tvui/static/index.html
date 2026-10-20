@@ -11,19 +11,12 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 700; src: url(/instrument-sans-700.woff2) format("woff2"), url(/instrument-sans-700.woff) format("woff"); }
 
   /* Sized in rem; the script scales 1rem to the screen (16px at 1280 wide). */
-  /* Pastel wash (pre-blurred bg.jpg, no CSS filters) under plum scrims that keep text readable. */
+  /* One pre-composited image: pastel wash plus plum scrims. No CSS gradients or full-screen
+     translucent layers, which the TV's 2014 browser renders as blocky tiles. */
   html, body { margin: 0; height: 100%; color: #fff; overflow: hidden;
     font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
   body { background-color: #e9cfd8; background-image: url(/bg.jpg); background-position: center;
     background-repeat: no-repeat; -webkit-background-size: cover; background-size: cover; }
-  #bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; opacity: .18;
-    -webkit-transition: background-color .4s; transition: background-color .4s; }
-  #shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-    background: -webkit-linear-gradient(left, rgba(61,15,72,.82) 0%, rgba(61,15,72,.38) 55%, rgba(61,15,72,0) 100%);
-    background: linear-gradient(to right, rgba(61,15,72,.82) 0%, rgba(61,15,72,.38) 55%, rgba(61,15,72,0) 100%); }
-  #fade { position: absolute; left: 0; right: 0; bottom: 0; height: 48%;
-    background: -webkit-linear-gradient(top, rgba(40,10,50,0), rgba(40,10,50,.82));
-    background: linear-gradient(to bottom, rgba(40,10,50,0), rgba(40,10,50,.82)); }
 
   .top { position: absolute; left: 2.5rem; right: 2.5rem; top: 1.6rem; font-size: 1.1rem;
     color: rgba(255,255,255,.72); text-shadow: 0 .1rem .8rem rgba(40,10,50,.6); }
@@ -62,7 +55,6 @@
 </style>
 </head>
 <body>
-<div id="bg"></div><div id="shade"></div><div id="fade"></div>
 
 <div class="top"><span id="clock"></span><span class="date" id="date"></span></div>
 
@@ -84,7 +76,7 @@
 })();
 
 // Known services get their logo tile (img) or brand colors; anything else gets a neutral card.
-// halo: the app's color (r,g,b), used for the faint background tint and the focus glow.
+// halo: the app's color (r,g,b), used in the focus glow.
 var BRANDS = {
   netflix: { bg: "#000", fg: "#e50914", halo: "229,9,20", text: "NETFLIX", img: 1 },
   youtube: { bg: "#fff", fg: "#ff0000", halo: "255,60,60", text: "YouTube", img: 1 },
@@ -154,7 +146,6 @@ function draw() {
   var t = tiles[sel];
   document.getElementById("title").innerHTML = t.name;
   document.getElementById("desc").innerHTML = t.label || DESC[t.action] || "";
-  document.getElementById("bg").style.backgroundColor = "rgb(" + brand(t.name).halo + ")";
   // Scroll the row so the selected tile stays on screen (tile + gap = 12.2rem, ~6 fit).
   row.style.marginLeft = -Math.max(0, sel - 5) * 12.2 + "rem";
 }
