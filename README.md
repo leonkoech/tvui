@@ -146,6 +146,11 @@ There are four kinds of action:
 
 `label` is optional, and sets the line shown under the title.
 
+While the TV shows the Roku's input, the phone remote's D-pad, OK, back, menu,
+options, and playback buttons control the Roku. Volume, mute, and power stay
+with the TV. For this, set the Roku's **Network access** to **Permissive**, as
+described above.
+
 On older Bravias (around 2016 and earlier), the TV's own YouTube, Netflix, and
 Prime apps may no longer work. YouTube, for example, shows "page is too large
 to be displayed". If you have a Roku, use `roku` tiles instead: YouTube is

@@ -150,6 +150,12 @@ def roku_launch(ip, channel):
     urllib.request.urlopen(req, timeout=6).read()
 
 
+def roku_key(ip, key):
+    """Press a key on a Roku (ECP names: Up, Select, Back, Play, Rev, Fwd, Info, ...)."""
+    req = urllib.request.Request(f"http://{ip}:8060/keypress/{key}", data=b"", method="POST")
+    urllib.request.urlopen(req, timeout=6).read()
+
+
 def find_roku():
     found = discover(timeout=3, pattern=r"SERVER:.*?(Roku)/")
     return found[0][0] if found else None

@@ -114,7 +114,10 @@ function send(path, btn) {
   btn.classList.add("hit");
   setTimeout(function () { btn.classList.remove("hit"); }, 130);
   fetch(path).then(function (r) {
-    msg.textContent = r.ok ? "" : "The TV didn't respond";
+    if (r.ok) { msg.textContent = ""; return; }
+    return r.json().then(function (j) {
+      msg.textContent = /Roku blocks/.test(j.error || "") ? j.error : "The TV didn't respond";
+    });
   }).catch(function () { msg.textContent = "Can't reach tvui. Is the server on?"; });
 }
 

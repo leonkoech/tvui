@@ -8,7 +8,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from tvui import config
-from tvui.sony import IRCC, TV, discover, find_roku, roku_launch
+from tvui.sony import IRCC, TV, discover, find_roku, roku_key, roku_launch
+
+# Remote buttons that go to the Roku while the TV shows its input.
+# Volume, mute and power always stay with the TV.
+ROKU_KEYS = {"Up": "Up", "Down": "Down", "Left": "Left", "Right": "Right",
+             "Confirm": "Select", "Return": "Back", "Home": "Home", "Options": "Info",
+             "Play": "Play", "Pause": "Play", "Rewind": "Rev", "Forward": "Fwd"}
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 PAGES = {"/": "index.html", "/remote": "remote.html"}
@@ -19,6 +25,8 @@ RENEW_EVERY = 24 * 3600  # pairing cookies last ~14 days; renew daily
 
 def make_handler(cfg, tv):
     def act(path, q):
+        if path != "/api/key":
+            watching["at"] = 0  # the input is about to change
         if path == "/api/tile":
             t = cfg["tiles"][int(q["i"])]
             if t["action"] == "app":
@@ -31,22 +39,54 @@ def make_handler(cfg, tv):
                 tv.set_input(t["input"])
                 launch_on_roku(t["value"])
         elif path == "/api/key":
-            tv.key(q["name"])
+            press(q["name"])
         elif path == "/api/home":
             tv.open_url(q["url"])
 
-    def launch_on_roku(channel):
+    def on_roku(fn, *args):
         ip = cfg.get("roku") or find_roku()
         try:
-            roku_launch(ip, channel)
+            fn(ip, *args)
         except (urllib.error.URLError, OSError, TypeError):
             ip = find_roku()  # Roku may have a new address
             if not ip:
                 raise RuntimeError("Roku not found on the network")
-            roku_launch(ip, channel)
+            fn(ip, *args)
         if cfg.get("roku") != ip:
             cfg["roku"] = ip
             config.save(cfg)
+
+    def launch_on_roku(channel):
+        on_roku(roku_launch, channel)
+
+    def roku_input():
+        return cfg.get("roku_input") or next(
+            (t["input"] for t in cfg["tiles"] if t["action"] == "roku"), None)
+
+    watching = {"uri": None, "at": 0.0}
+
+    def watching_roku():
+        """Whether the TV is showing the Roku's input (cached briefly so key presses stay fast)."""
+        if time.time() - watching["at"] > 2:
+            try:
+                watching["uri"] = tv.rpc("avContent", "getPlayingContentInfo")[0].get("uri")
+            except Exception:
+                watching["uri"] = None  # e.g. the tvui home screen, which has no input
+            watching["at"] = time.time()
+        return roku_input() is not None and watching["uri"] == roku_input()
+
+    def press(name):
+        if name in ROKU_KEYS and watching_roku():
+            try:
+                on_roku(roku_key, ROKU_KEYS[name])
+            except urllib.error.HTTPError as e:
+                if e.code == 403:
+                    raise RuntimeError("Roku blocks remote keys. On the Roku: Settings > System > "
+                                       "Advanced system settings > Control by mobile apps > "
+                                       "Network access > Permissive") from e
+                raise
+        else:
+            tv.key(name)
 
     def act_or_rediscover(path, q):
         try:
