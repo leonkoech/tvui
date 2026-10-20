@@ -146,6 +146,11 @@ There are four kinds of action:
 
 `label` is optional, and sets the line shown under the title.
 
+On older Bravias (around 2016 and earlier), the TV's own YouTube, Netflix, and
+Prime apps may no longer work. YouTube, for example, shows "page is too large
+to be displayed". If you have a Roku, use `roku` tiles instead: YouTube is
+`837`, Netflix `12`, Prime Video `13`, and Crunchyroll `2595`.
+
 Netflix, YouTube, Prime Video, Roku, Crunchyroll, and Laptop tiles show their
 logos. Hulu, Disney+, Plex, and Max tiles get their brand colours. Any other
 tile gets a neutral card. Reorder, rename, or remove tiles, then restart tvui.
