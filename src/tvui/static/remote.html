@@ -13,6 +13,9 @@
 <link rel="manifest" href="/manifest.json">
 <title>TV Remote</title>
 <style>
+  @font-face { font-family: "Instrument Sans"; font-weight: 500; src: url(/instrument-sans-500.woff2) format("woff2"), url(/instrument-sans-500.woff) format("woff"); }
+  @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
+
   /* Palette from the app icon: pastel blur wash, plum D-pad. */
   :root { --blush: #F6D6E1; --sage: #CFE3CF; --peach: #FBE3D6; --plum: #5B2A6E; --plum-dark: #431D54;
     --glass: rgba(255,255,255,.55); --glass-hit: rgba(255,255,255,.85); --shadow: rgba(91,42,110,.18); }
@@ -26,7 +29,7 @@
       radial-gradient(ellipse 60% 40% at 10% 15%, #F9CFDD 0%, transparent 70%),
       var(--blush);
     background-attachment: fixed;
-    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Instrument Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
     -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   .wrap { max-width: 420px; margin: 0 auto;
     padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);

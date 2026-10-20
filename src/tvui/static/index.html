@@ -4,9 +4,15 @@
 <meta charset="utf-8">
 <title>Home</title>
 <style>
+  /* Instrument Sans, self-hosted; woff for the TV's 2014 browser, woff2 for newer ones. */
+  @font-face { font-family: "Instrument Sans"; font-weight: 400; src: url(/instrument-sans-400.woff2) format("woff2"), url(/instrument-sans-400.woff) format("woff"); }
+  @font-face { font-family: "Instrument Sans"; font-weight: 500; src: url(/instrument-sans-500.woff2) format("woff2"), url(/instrument-sans-500.woff) format("woff"); }
+  @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
+  @font-face { font-family: "Instrument Sans"; font-weight: 700; src: url(/instrument-sans-700.woff2) format("woff2"), url(/instrument-sans-700.woff) format("woff"); }
+
   /* Sized in rem; the script scales 1rem to the screen (16px at 1280 wide). */
   html, body { margin: 0; height: 100%; background: #0a0a0c; color: #fff; overflow: hidden;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
+    font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
   #bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
     -webkit-transition: background-color .5s; transition: background-color .5s; }
   #shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0;

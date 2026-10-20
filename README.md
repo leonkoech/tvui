@@ -194,6 +194,8 @@ the phone remote or with `tvui open`.
 
 ## License
 
-MIT. The logo shapes come from [Simple Icons](https://simpleicons.org) (CC0).
+MIT. The interface uses [Instrument Sans](https://github.com/Instrument/instrument-sans)
+(SIL Open Font License, bundled in `src/tvui/static/`). The logo shapes come
+from [Simple Icons](https://simpleicons.org) (CC0).
 Brand names and logos are trademarks of their owners, and tvui isn't affiliated
 with them.
