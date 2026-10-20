@@ -31,19 +31,17 @@
   .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
   button { border: 0; padding: 0; color: var(--ink); font: inherit; cursor: pointer;
     display: grid; place-items: center; }
-  /* Sage pills with deep-green icons carry the palette's green half; the plum D-pad stays the focus. */
-  .pill, .sq { background: rgba(190,217,192,.78); border: 1px solid rgba(255,255,255,.55);
+  /* Frosted-white pills with plum icons; the D-pad is the only saturated object. */
+  .pill, .sq { background: var(--glass); border: 1px solid rgba(255,255,255,.7);
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-    box-shadow: 0 5px 16px rgba(60,100,70,.18); transition: transform .12s, background .12s; }
+    box-shadow: 0 5px 16px var(--shadow); transition: transform .12s, background .12s; }
   .pill { flex: 1; height: 64px; border-radius: 32px; }
   .sq { flex: 0 0 64px; height: 56px; border-radius: 10px; }
   /* No vibration on iOS, so the press itself has to read clearly. */
-  .pill.hit, .sq.hit { transform: scale(.94); background: #D6EAD7; }
+  .pill.hit, .sq.hit { transform: scale(.94); background: #fff; }
   svg { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2.4;
     stroke-linecap: round; stroke-linejoin: round; }
   svg.fill { fill: var(--ink); stroke: none; }
-  .pill svg, .sq svg { stroke: #2F5A3E; }
-  .pill svg.fill { fill: #2F5A3E; stroke: none; }
 
   /* D-pad: plum cross on a frosted disc, one soft shadow like the icon */
   .disc { position: relative; width: min(84vw, 340px); aspect-ratio: 1; margin: 6px auto;
@@ -65,8 +63,7 @@
   .ok.hit { transform: scale(.94); background: #2f1240; }
 
   /* Power: the one warm accent, findable but not tempting */
-  .power { background: rgba(255,255,255,.75); }
-  .power.hit { background: #fff; }
+  .power { background: rgba(255,255,255,.7); }
   .power svg { stroke: #C4456B; }
   .msg { text-align: center; font-size: 13px; color: rgba(74,35,88,.75); min-height: 16px; margin-top: -10px; }
 </style>
