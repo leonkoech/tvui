@@ -34,10 +34,12 @@
   .hero .btn { display: inline-block; padding: .6rem 1.3rem; border-radius: .4rem;
     background: #fff; color: #111; font-size: 1rem; font-weight: 600; }
 
-  .row { position: absolute; left: 6.5rem; right: 0; bottom: 3.2rem; height: 8rem; white-space: nowrap; }
-  .tile { display: inline-block; vertical-align: top; width: 13rem; height: 7.4rem; margin-right: 1.1rem;
-    border-radius: .5rem; text-align: center; line-height: 7.4rem; font-size: 1.9rem; font-weight: 700;
-    letter-spacing: -.03rem; border: .18rem solid transparent; box-sizing: border-box;
+  .row { position: absolute; left: 6.5rem; right: 0; bottom: 3.2rem; height: 7.4rem; white-space: nowrap;
+    -webkit-transition: margin-left .2s; transition: margin-left .2s; }
+  .tile { display: inline-block; vertical-align: top; width: 11rem; height: 6.24rem; margin-right: 1rem;
+    border-radius: .5rem; overflow: hidden; text-align: center; line-height: 6.24rem; font-size: 1.6rem;
+    font-weight: 700; letter-spacing: -.03rem; border: .18rem solid transparent; box-sizing: border-box;
+    background-size: cover; background-position: center;
     -webkit-transition: -webkit-transform .15s; transition: transform .15s; }
   .tile.on { border-color: #fff; -webkit-transform: scale(1.07); transform: scale(1.07); }
 
@@ -65,12 +67,14 @@
   document.documentElement.style.fontSize = (window.innerWidth / 1280 * 16) + "px";
 })();
 
-// Known services get brand colors; anything else gets a neutral card.
+// Known services get their logo tile (img) or brand colors; anything else gets a neutral card.
 var BRANDS = {
-  netflix: { bg: "#000", fg: "#e50914", glow: "#5a0a0e", text: "NETFLIX" },
-  youtube: { bg: "#fff", fg: "#ff0000", glow: "#4a1010", text: "YouTube" },
-  prime:   { bg: "#0f171e", fg: "#00a8e1", glow: "#0b3550", text: "prime video" },
-  roku:    { bg: "#6c1d7d", fg: "#fff", glow: "#3d0f48", text: "Roku" },
+  netflix: { bg: "#000", fg: "#e50914", glow: "#5a0a0e", text: "NETFLIX", img: 1 },
+  youtube: { bg: "#fff", fg: "#ff0000", glow: "#4a1010", text: "YouTube", img: 1 },
+  prime:   { bg: "#0f171e", fg: "#00a8e1", glow: "#0b3550", text: "prime video", img: 1 },
+  roku:    { bg: "#6c1d7d", fg: "#fff", glow: "#3d0f48", text: "Roku", img: 1 },
+  crunchyroll: { bg: "#f47521", fg: "#fff", glow: "#5a2a0b", text: "crunchyroll", img: 1 },
+  laptop:  { bg: "#2b2b30", fg: "#fff", glow: "#24242c", text: "Laptop", img: 1 },
   hulu:    { bg: "#0b0c0f", fg: "#1ce783", glow: "#0d4a2c", text: "hulu" },
   disney:  { bg: "#0e1a5c", fg: "#fff", glow: "#0e1a5c", text: "Disney+" },
   plex:    { bg: "#1f1f1f", fg: "#e5a00d", glow: "#4a3604", text: "plex" },
@@ -79,7 +83,8 @@ var BRANDS = {
 var DESC = {
   input: "Switch the TV to this HDMI input.",
   app: "Open the app on the TV.",
-  key: "Open the app on the TV."
+  key: "Open the app on the TV.",
+  roku: "Opens on your Roku."
 };
 
 var tiles = [], sel = 0, inSide = false, sideSel = 0;
@@ -88,7 +93,7 @@ var side = document.getElementById("side").getElementsByTagName("div");
 
 function brand(name) {
   var k = name.toLowerCase();
-  for (var b in BRANDS) if (k.indexOf(b) >= 0) return BRANDS[b];
+  for (var b in BRANDS) if (k.indexOf(b) >= 0) { BRANDS[b].key = b; return BRANDS[b]; }
   return { bg: "#26262b", fg: "#fff", glow: "#222228", text: name };
 }
 
@@ -103,9 +108,10 @@ function build() {
   for (var i = 0; i < tiles.length; i++) {
     var b = brand(tiles[i].name), t = document.createElement("div");
     t.className = "tile";
-    t.style.background = b.bg;
+    t.style.backgroundColor = b.bg;
     t.style.color = b.fg;
-    t.innerHTML = b.text;
+    if (b.img) t.style.backgroundImage = "url(/tile-" + b.key + ".png)";
+    else t.innerHTML = b.text;
     row.appendChild(t);
   }
   draw();
@@ -121,6 +127,8 @@ function draw() {
   document.getElementById("title").innerHTML = t.name;
   document.getElementById("desc").innerHTML = t.label || DESC[t.action] || "";
   document.getElementById("bg").style.backgroundColor = brand(t.name).glow;
+  // Scroll the row so the selected tile stays on screen (tile + gap = 12rem, ~6 fit).
+  row.style.marginLeft = -Math.max(0, sel - 5) * 12 + "rem";
 }
 
 function open() {

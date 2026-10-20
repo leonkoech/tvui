@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from tvui import config
-from tvui.sony import IRCC, TV, discover
+from tvui.sony import IRCC, TV, discover, find_roku, roku_launch
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 PAGES = {"/": "index.html", "/remote": "remote.html"}
@@ -27,10 +27,26 @@ def make_handler(cfg, tv):
                 tv.set_input(t["value"])
             elif t["action"] == "key":
                 tv.key(t["value"])
+            elif t["action"] == "roku":
+                tv.set_input(t["input"])
+                launch_on_roku(t["value"])
         elif path == "/api/key":
             tv.key(q["name"])
         elif path == "/api/home":
             tv.open_url(q["url"])
+
+    def launch_on_roku(channel):
+        ip = cfg.get("roku") or find_roku()
+        try:
+            roku_launch(ip, channel)
+        except (urllib.error.URLError, OSError, TypeError):
+            ip = find_roku()  # Roku may have a new address
+            if not ip:
+                raise RuntimeError("Roku not found on the network")
+            roku_launch(ip, channel)
+        if cfg.get("roku") != ip:
+            cfg["roku"] = ip
+            config.save(cfg)
 
     def act_or_rediscover(path, q):
         try:
@@ -106,16 +122,38 @@ def _renew_loop(cfg, tv):
         _renew(cfg, tv)
 
 
+def _home_on_power_loop(cfg, tv, home_url):
+    """Open the home screen whenever the TV turns on, instead of its last input."""
+    was_on = tv.power() == "active"
+    while True:
+        time.sleep(4)
+        on = tv.power() == "active"
+        if on and not was_on:
+            time.sleep(6)  # let the TV finish booting before it accepts app launches
+            for _ in range(3):
+                try:
+                    tv.open_url(home_url)
+                    print("TV turned on: opened home screen", flush=True)
+                    break
+                except Exception as e:
+                    print(f"couldn't open home on power-on: {e}", flush=True)
+                    time.sleep(5)
+        was_on = on
+
+
 def serve(cfg, open_on_tv=False):
+    from tvui.cli import local_ip
     tv = TV(cfg["tv"], cfg["auth"], cfg["psk"])
     _renew(cfg, tv)  # before serving, so no request races the token swap
     threading.Thread(target=_renew_loop, args=(cfg, tv), daemon=True).start()
+    home_url = f"http://{local_ip(cfg['tv'])}:{cfg['port']}/"
+    if cfg.get("home_on_power_on", True):
+        threading.Thread(target=_home_on_power_loop, args=(cfg, tv, home_url), daemon=True).start()
     httpd = ThreadingHTTPServer(("0.0.0.0", cfg["port"]), make_handler(cfg, tv))
     print(f"tvui serving on port {cfg['port']}  (TV {cfg['tv']})", flush=True)
     if open_on_tv:
-        from tvui.cli import local_ip
         try:
-            tv.open_url(f"http://{local_ip(cfg['tv'])}:{cfg['port']}/")
+            tv.open_url(home_url)
         except Exception as e:
             print(f"couldn't open on TV: {e}", flush=True)
     httpd.serve_forever()

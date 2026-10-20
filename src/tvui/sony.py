@@ -29,8 +29,8 @@ IRCC = {
 }
 
 
-def discover(timeout=4):
-    """Return [(ip, model)] for Sony TVs answering SSDP on the local network."""
+def discover(timeout=4, pattern=r"SERVER:.*?(K[DL]{1,2}-\w+|XBR-\w+)"):
+    """Return [(ip, model)] for devices whose SSDP reply matches pattern (default: Sony TVs)."""
     msg = ("M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\n"
            'MAN: "ssdp:discover"\r\nMX: 2\r\nST: ssdp:all\r\n\r\n').encode()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -49,7 +49,7 @@ def discover(timeout=4):
                 pass
         while True:
             data, (ip, _) = s.recvfrom(4096)
-            m = re.search(r"SERVER:.*?(K[DL]{1,2}-\w+|XBR-\w+)", data.decode(errors="ignore"), re.I)
+            m = re.search(pattern, data.decode(errors="ignore"), re.I)
             if m:
                 found[ip] = m.group(1)
     except socket.timeout:
@@ -120,6 +120,13 @@ class TV:
                 "SOAPACTION": '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}))
         urllib.request.urlopen(req, timeout=8).read()
 
+    def power(self):
+        """"active", "standby", or "off" when the TV doesn't answer (network sleeps in standby)."""
+        try:
+            return self.rpc("system", "getPowerStatus")[0]["status"]
+        except Exception:
+            return "off"
+
     def apps(self):
         return self.rpc("appControl", "getApplicationList")[0]
 
@@ -135,6 +142,17 @@ class TV:
     def open_url(self, url):
         from urllib.parse import quote
         self.launch("localapp://webappruntime?url=" + quote(url, safe=""))
+
+
+def roku_launch(ip, channel):
+    """Start a channel on a Roku via its External Control Protocol."""
+    req = urllib.request.Request(f"http://{ip}:8060/launch/{channel}", data=b"", method="POST")
+    urllib.request.urlopen(req, timeout=6).read()
+
+
+def find_roku():
+    found = discover(timeout=3, pattern=r"SERVER:.*?(Roku)/")
+    return found[0][0] if found else None
 
 
 def default_tiles(tv):

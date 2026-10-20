@@ -117,28 +117,39 @@ menu and power.
 
 ## The home screen
 
+When the TV turns on, tvui opens the home screen instead of the last input.
+To turn this off, set `"home_on_power_on": false` in the config.
+
 The tiles are saved in `~/.config/tvui/config.json`:
 
 ```json
 "tiles": [
-  { "name": "Roku",    "action": "input", "value": "extInput:hdmi?port=1", "label": "HDMI 1 · Switch to your Roku." },
-  { "name": "YouTube", "action": "app",   "value": "kamaji://BIV-3607" },
-  { "name": "Netflix", "action": "key",   "value": "Netflix" }
+  { "name": "Roku",        "action": "input", "value": "extInput:hdmi?port=1", "label": "HDMI 1 · Switch to your Roku." },
+  { "name": "YouTube",     "action": "app",   "value": "kamaji://BIV-3607" },
+  { "name": "Netflix",     "action": "key",   "value": "Netflix" },
+  { "name": "Crunchyroll", "action": "roku",  "value": "2595", "input": "extInput:hdmi?port=1" },
+  { "name": "Laptop",      "action": "input", "value": "extInput:hdmi?port=2" }
 ]
 ```
 
-There are three kinds of action:
+There are four kinds of action:
 
 - `input` switches to an HDMI input.
 - `app` launches a TV app.
 - `key` sends a remote key.
+- `roku` switches to the Roku's HDMI input (`input`) and launches a Roku
+  channel by its ID (`value`). This covers apps the TV doesn't have. tvui
+  finds the Roku on the network by itself. To look up channel IDs, open
+  `http://<roku-ip>:8060/query/apps`. That needs **Settings → System →
+  Advanced system settings → Control by mobile apps → Network access** set to
+  **Permissive**, but launching a channel works in the default mode.
 
 `label` is optional, and sets the line shown under the title.
 
-Known services get their brand colours: Netflix, YouTube, Prime, Roku, Hulu,
-Disney+, Plex, and Max. Any other tile gets a neutral card. Reorder, rename, or
-remove tiles, then restart tvui. To rebuild the list from scratch, run
-`tvui setup` again.
+Netflix, YouTube, Prime Video, Roku, Crunchyroll, and Laptop tiles show their
+logos. Hulu, Disney+, Plex, and Max tiles get their brand colours. Any other
+tile gets a neutral card. Reorder, rename, or remove tiles, then restart tvui.
+To rebuild the list from scratch, run `tvui setup` again.
 
 ## Commands
 
@@ -173,4 +184,6 @@ the phone remote or with `tvui open`.
 
 ## License
 
-MIT
+MIT. The logo shapes come from [Simple Icons](https://simpleicons.org) (CC0).
+Brand names and logos are trademarks of their owners, and tvui isn't affiliated
+with them.
