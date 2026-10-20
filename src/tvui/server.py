@@ -83,7 +83,16 @@ def make_handler(cfg, tv):
     def watching_roku():
         return roku_input() is not None and watching["uri"] == roku_input()
 
+    paused = {"tv": False}
+
     def press(name):
+        if name == "PlayPause":
+            # The Roku's Play key is a real toggle; the TV has none, so alternate.
+            if not watching_roku():
+                name = "Play" if paused["tv"] else "Pause"
+                paused["tv"] = not paused["tv"]
+            else:
+                name = "Play"
         if name in ROKU_KEYS and watching_roku():
             try:
                 on_roku(roku_key, ROKU_KEYS[name])
@@ -148,7 +157,7 @@ def make_handler(cfg, tv):
                 return self._send(200, json.dumps(tiles))
             if url.path not in ("/api/tile", "/api/key", "/api/home"):
                 return self._send(404, '{"error":"not found"}')
-            if url.path == "/api/key" and q.get("name") not in IRCC:
+            if url.path == "/api/key" and q.get("name") not in IRCC and q.get("name") != "PlayPause":
                 return self._send(400, '{"error":"unknown key"}')
             if url.path == "/api/key":
                 keys.put(q["name"])

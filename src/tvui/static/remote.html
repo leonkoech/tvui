@@ -17,57 +17,55 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
 
   /* Palette from the app icon: pastel blur wash, plum D-pad. */
-  :root { --blush: #F6D6E1; --sage: #CFE3CF; --peach: #FBE3D6; --plum: #5B2A6E; --plum-dark: #431D54;
-    --glass: rgba(255,255,255,.55); --glass-hit: rgba(255,255,255,.85); --shadow: rgba(91,42,110,.18); }
+  :root { --blush: #F6D6E1; --plum: #5B2A6E; --plum-dark: #431D54; --ink: #4A2358;
+    --glass: rgba(255,255,255,.58); --shadow: rgba(91,42,110,.14); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { min-height: 100%; background: var(--blush); }
-  body { margin: 0; min-height: 100vh; color: var(--plum);
-    background:
-      radial-gradient(ellipse 70% 45% at 10% 100%, var(--sage) 0%, transparent 70%),
-      radial-gradient(ellipse 70% 45% at 95% 95%, var(--sage) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 35% at 85% 8%, var(--peach) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 10% 15%, #F9CFDD 0%, transparent 70%),
-      var(--blush);
-    background-attachment: fixed;
+  body { margin: 0; min-height: 100vh; color: var(--ink);
+    background: #ecd3dc url(/remote-bg.jpg) center / cover no-repeat fixed;
     font-family: "Instrument Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
     -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   .wrap { max-width: 420px; margin: 0 auto;
     padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
     display: flex; flex-direction: column; gap: 26px; }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
-  button { border: 0; padding: 0; color: var(--plum); font: inherit; cursor: pointer;
+  button { border: 0; padding: 0; color: var(--ink); font: inherit; cursor: pointer;
     display: grid; place-items: center; }
-  .pill { flex: 1; height: 64px; border-radius: 32px; background: var(--glass);
-    border: 1px solid rgba(255,255,255,.75);
-    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    box-shadow: 0 6px 16px var(--shadow);
-    transition: transform .08s, background .08s; }
-  .pill:active, .pill.hit { transform: scale(.96); background: var(--glass-hit); }
-  .sq { flex: 0 0 64px; height: 56px; background: transparent; border: 1.5px solid rgba(91,42,110,.45); border-radius: 6px; }
-  .sq:active, .sq.hit { background: rgba(255,255,255,.5); }
-  svg { width: 26px; height: 26px; fill: none; stroke: var(--plum); stroke-width: 2.4;
+  /* Frosted-white pills with plum icons; the D-pad is the only saturated object. */
+  .pill, .sq { background: var(--glass); border: 1px solid rgba(255,255,255,.7);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: 0 5px 16px var(--shadow); transition: transform .12s, background .12s; }
+  .pill { flex: 1; height: 64px; border-radius: 32px; }
+  .sq { flex: 0 0 64px; height: 56px; border-radius: 10px; }
+  /* No vibration on iOS, so the press itself has to read clearly. */
+  .pill.hit, .sq.hit { transform: scale(.94); background: #fff; }
+  svg { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2.4;
     stroke-linecap: round; stroke-linejoin: round; }
-  svg.fill { fill: var(--plum); stroke: none; }
+  svg.fill { fill: var(--ink); stroke: none; }
 
   /* D-pad: plum cross on a frosted disc, one soft shadow like the icon */
   .disc { position: relative; width: min(84vw, 340px); aspect-ratio: 1; margin: 6px auto;
     border-radius: 50%; background: rgba(255,255,255,.3); border: 1px solid rgba(255,255,255,.55); }
   .cross { position: absolute; inset: 6%; }
-  .shape { position: absolute; inset: 0; filter: drop-shadow(0 10px 14px rgba(91,42,110,.3)); }
+  .shape { position: absolute; inset: 0; filter: drop-shadow(0 13px 19px rgba(67,29,84,.35)); }
   .arm { position: absolute; background: var(--plum); }
   .arm.v { left: 33%; width: 34%; top: 0; bottom: 0; border-radius: 22% / 12%; }
   .arm.h { top: 33%; height: 34%; left: 0; right: 0; border-radius: 12% / 22%; }
   .dir { position: absolute; background: transparent; width: 34%; height: 33%; border-radius: 18px; }
-  .dir:active, .dir.hit { background: rgba(255,255,255,.14); }
+  .dir.hit { background: rgba(255,255,255,.14); }
+  .dir.hit svg { stroke: var(--blush); }
   .dir svg { width: 34px; height: 34px; stroke: #fff; stroke-width: 2.8; }
   .up { left: 33%; top: 0; } .down { left: 33%; bottom: 0; }
   .left { top: 33%; left: 0; width: 33%; height: 34%; } .right { top: 33%; right: 0; width: 33%; height: 34%; }
   .ok { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; border-radius: 50%;
-    background: var(--plum-dark); color: #fff; font-size: 26px; font-weight: 600; letter-spacing: 1px; }
-  .ok:active, .ok.hit { background: #6d3685; }
+    background: var(--plum-dark); color: #fff; font-size: 26px; font-weight: 600; letter-spacing: 1px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); transition: transform .12s, background .12s; }
+  .ok.hit { transform: scale(.94); background: #2f1240; }
 
-  .power svg { stroke: #B3365B; }
-  .msg { text-align: center; font-size: 13px; color: rgba(91,42,110,.7); min-height: 16px; margin-top: -10px; }
+  /* Power: the one warm accent, findable but not tempting */
+  .power { background: rgba(255,255,255,.7); }
+  .power svg { stroke: #C4456B; }
+  .msg { text-align: center; font-size: 13px; color: rgba(74,35,88,.75); min-height: 16px; margin-top: -10px; }
 </style>
 </head>
 <body>
@@ -110,12 +108,12 @@
 </div>
 
 <script>
-var msg = document.getElementById("msg"), playing = true;
+var msg = document.getElementById("msg");
 
 function send(path, btn) {
   if (navigator.vibrate) navigator.vibrate(8);
   btn.classList.add("hit");
-  setTimeout(function () { btn.classList.remove("hit"); }, 130);
+  setTimeout(function () { btn.classList.remove("hit"); }, 160);
   fetch(path).then(function (r) {
     return r.json().then(function (j) {
       var problem = r.ok ? j.warn : j.error;
@@ -129,7 +127,6 @@ document.querySelectorAll("button").forEach(function (b) {
     e.preventDefault();
     var k = b.getAttribute("data-k");
     if (b.hasAttribute("data-home")) return send("/api/home", b);
-    if (k === "PlayPause") { k = playing ? "Pause" : "Play"; playing = !playing; }
     send("/api/key?name=" + k, b);
   });
 });
