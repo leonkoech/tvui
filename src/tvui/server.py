@@ -196,22 +196,36 @@ def _renew_loop(cfg, tv):
         _renew(cfg, tv)
 
 
+def _web_app_open(tv, home_url):
+    try:
+        st = tv.rpc("appControl", "getWebAppStatus")[0]
+        return st.get("active") and st.get("url", "").startswith(home_url)
+    except Exception:
+        return False
+
+
 def _home_on_power_loop(cfg, tv, home_url):
     """Open the home screen whenever the TV turns on, instead of its last input."""
-    was_on = tv.power() == "active"
+    was_on = tv.power_quick() == "active"
     while True:
-        time.sleep(4)
-        on = tv.power() == "active"
+        time.sleep(1)
+        on = tv.power_quick() == "active"
         if on and not was_on:
-            time.sleep(6)  # let the TV finish booting before it accepts app launches
-            for _ in range(3):
+            # Launch right away and keep retrying: a TV still booting may refuse the
+            # launch, or accept it and then fall back to its last input, so confirm.
+            start = time.time()
+            while time.time() - start < 25:
                 try:
                     tv.open_url(home_url)
-                    print("TV turned on: opened home screen", flush=True)
-                    break
+                    # The TV takes a moment to report the page as open; don't relaunch too soon.
+                    if any(time.sleep(1) or _web_app_open(tv, home_url) for _ in range(3)):
+                        print(f"TV turned on: home screen open after {time.time() - start:.1f}s", flush=True)
+                        break
                 except Exception as e:
-                    print(f"couldn't open home on power-on: {e}", flush=True)
-                    time.sleep(5)
+                    print(f"power-on: TV not ready yet ({e})", flush=True)
+                    time.sleep(1)
+            else:
+                print("power-on: gave up opening the home screen after 25s", flush=True)
         was_on = on
 
 

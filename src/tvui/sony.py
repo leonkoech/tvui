@@ -147,6 +147,19 @@ class TV:
         except Exception:
             return "off"
 
+    def power_quick(self, timeout=1.5):
+        """Like power(), on its own short-lived connection so a TV in standby (network
+        asleep) can't stall the shared connection that key presses use."""
+        body = json.dumps({"method": "getPowerStatus", "params": [], "id": 1, "version": "1.0"})
+        conn = http.client.HTTPConnection(self.ip, 80, timeout=timeout)
+        try:
+            conn.request("POST", "/sony/system", body, self._headers({"Content-Type": "application/json"}))
+            return json.loads(conn.getresponse().read())["result"][0]["status"]
+        except Exception:
+            return "off"
+        finally:
+            conn.close()
+
     def apps(self):
         return self.rpc("appControl", "getApplicationList")[0]
 
