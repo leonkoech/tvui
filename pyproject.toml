@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tvui"
+version = "0.1.0"
+description = "A minimal custom home screen and phone remote for Sony Bravia TVs"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+keywords = ["sony", "bravia", "tv", "remote", "home-screen", "ircc"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Home Automation",
+]
+dependencies = []
+
+[project.scripts]
+tvui = "tvui.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tvui = ["static/*"]

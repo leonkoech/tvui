@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TV Remote">
+<meta name="theme-color" content="#2a2a2c">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" type="image/png" href="/icon-512.png">
+<link rel="manifest" href="/manifest.json">
+<title>TV Remote</title>
+<style>
+  :root { --bg1: #323234; --bg2: #232325; --btn: #38383a; --edge: #1e1e20; --purple: #6a0f8e; --ink: #fff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; color: var(--ink);
+    background: linear-gradient(180deg, var(--bg1), var(--bg2)) fixed;
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+  .wrap { max-width: 420px; margin: 0 auto;
+    padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+    display: flex; flex-direction: column; gap: 28px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+  button { border: 0; padding: 0; color: var(--ink); font: inherit; cursor: pointer;
+    display: grid; place-items: center; }
+  .pill { flex: 1; height: 64px; border-radius: 32px; background: var(--btn);
+    box-shadow: 0 0 0 4px var(--edge), 0 6px 14px rgba(0,0,0,.35);
+    transition: transform .08s, background .08s; }
+  .pill:active, .pill.hit { transform: scale(.96); background: #48484a; }
+  .sq { flex: 0 0 64px; height: 56px; background: transparent; border: 1.5px solid #6e6e70; border-radius: 4px; }
+  .sq:active, .sq.hit { background: #3a3a3c; }
+  svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round; }
+  svg.fill { fill: #fff; stroke: none; }
+
+  /* D-pad: a purple cross on a dark disc */
+  .disc { position: relative; width: min(84vw, 340px); aspect-ratio: 1; margin: 8px auto;
+    border-radius: 50%; background: #2c2c2e; box-shadow: inset 0 2px 10px rgba(0,0,0,.35); }
+  .cross { position: absolute; inset: 6%; }
+  .shape { position: absolute; inset: 0; filter: drop-shadow(0 4px 0 #3c0752); }
+  .arm { position: absolute; background: var(--purple); }
+  .arm.v { left: 33%; width: 34%; top: 0; bottom: 0; border-radius: 22% / 12%; }
+  .arm.h { top: 33%; height: 34%; left: 0; right: 0; border-radius: 12% / 22%; }
+  .dir { position: absolute; background: transparent; width: 34%; height: 33%; border-radius: 18px; }
+  .dir:active, .dir.hit { background: rgba(255,255,255,.12); }
+  .dir svg { width: 34px; height: 34px; stroke-width: 2.6; }
+  .up { left: 33%; top: 0; } .down { left: 33%; bottom: 0; }
+  .left { top: 33%; left: 0; width: 33%; height: 34%; } .right { top: 33%; right: 0; width: 33%; height: 34%; }
+  .ok { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; border-radius: 50%;
+    background: #5c0c7c; font-size: 26px; font-weight: 600; letter-spacing: 1px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 2px 8px rgba(0,0,0,.25); }
+  .ok:active, .ok.hit { background: #7a1aa0; }
+
+  .lbl { font-size: 15px; font-weight: 600; letter-spacing: .5px; }
+  .msg { text-align: center; font-size: 13px; color: #8e8e93; min-height: 16px; margin-top: -12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row">
+    <button class="pill" data-k="Return" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6"/></svg></button>
+    <button class="sq" data-k="Home" aria-label="TV menu"><svg viewBox="0 0 24 24" style="stroke-width:1.6"><path d="M5 8h14M5 12h14M5 16h14"/></svg></button>
+    <button class="pill" data-home aria-label="Home screen"><svg viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5v8.5h-5.5v-5h-5v5H4z"/></svg></button>
+  </div>
+
+  <div class="disc">
+    <div class="cross">
+      <div class="shape"><div class="arm v"></div><div class="arm h"></div></div>
+      <button class="dir up" data-k="Up" aria-label="Up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="dir left" data-k="Left" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="ok" data-k="Confirm">OK</button>
+      <button class="dir right" data-k="Right" aria-label="Right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="dir down" data-k="Down" aria-label="Down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="pill" data-k="VolumeDown" aria-label="Volume down"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    <button class="pill" data-k="Mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+    <button class="pill" data-k="VolumeUp" aria-label="Volume up"><svg viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"/></svg></button>
+  </div>
+
+  <div class="row">
+    <button class="pill" data-k="Rewind" aria-label="Rewind"><svg class="fill" viewBox="0 0 24 24"><path d="M11 6v12L3 12zM20 6v12l-8-6z"/></svg></button>
+    <button class="pill" data-k="PlayPause" aria-label="Play or pause"><svg class="fill" viewBox="0 0 24 24"><path d="M3 5.5v13L12 12zM14 5.5h3v13h-3zM19 5.5h3v13h-3z"/></svg></button>
+    <button class="pill" data-k="Forward" aria-label="Fast forward"><svg class="fill" viewBox="0 0 24 24"><path d="M4 6v12l8-6zM13 6v12l8-6z"/></svg></button>
+  </div>
+
+  <div class="row">
+    <button class="pill" data-k="PowerOff" aria-label="Power off"><svg viewBox="0 0 24 24" style="stroke:#ff6b6b"><path d="M12 3.5v8M6.6 6.8a7.5 7.5 0 1 0 10.8 0"/></svg></button>
+    <button class="pill" data-k="Options" aria-label="Options"><svg viewBox="0 0 24 24" style="stroke-width:2.8"><path d="M12 4v16M5.1 8l13.8 8M5.1 16l13.8-8"/></svg></button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+var msg = document.getElementById("msg"), playing = true;
+
+function send(path, btn) {
+  if (navigator.vibrate) navigator.vibrate(8);
+  btn.classList.add("hit");
+  setTimeout(function () { btn.classList.remove("hit"); }, 130);
+  fetch(path).then(function (r) {
+    msg.textContent = r.ok ? "" : "The TV didn't respond";
+  }).catch(function () { msg.textContent = "Can't reach tvui. Is the server on?"; });
+}
+
+document.querySelectorAll("button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var k = b.getAttribute("data-k");
+    if (b.hasAttribute("data-home")) return send("/api/home", b);
+    if (k === "PlayPause") { k = playing ? "Pause" : "Play"; playing = !playing; }
+    send("/api/key?name=" + k, b);
+  });
+});
+</script>
+</body>
+</html>
