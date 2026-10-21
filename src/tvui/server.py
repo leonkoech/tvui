@@ -33,19 +33,21 @@ def make_handler(cfg, tv):
                 watching["uri"] = None
                 tv.launch(t["value"])
             elif t["action"] == "input":
-                watching["uri"] = t["value"]
+                watching["uri"], watching["home"] = t["value"], False
                 tv.set_input(t["value"])
+                if t["value"] == roku_input():
+                    release_relay()  # straight to the Roku's home screen, not the relay
             elif t["action"] == "key":
                 tv.key(t["value"])
             elif t["action"] == "roku":
-                watching["uri"] = t["input"]
+                watching["uri"], watching["home"] = t["input"], False
                 roku_trip.update(active=True, app_seen=False, since=time.time())
                 tv.set_input(t["input"])
                 launch_on_roku(t["value"])
         elif path == "/api/key":
             press(q["name"])
         elif path == "/api/home":
-            watching["uri"] = None
+            watching["uri"], watching["home"] = None, True
             tv.open_url(q["url"])
 
     def on_roku(fn, *args):
@@ -69,16 +71,20 @@ def make_handler(cfg, tv):
             (t["input"] for t in cfg["tiles"] if t["action"] == "roku"), None)
 
     # The TV's current input, refreshed in the background so a key press never waits on it.
-    watching = {"uri": None, "tv_on": False}
+    watching = {"uri": None, "tv_on": False, "home": False}
 
     def track_input():
         while True:
             try:
                 watching["uri"] = tv.rpc("avContent", "getPlayingContentInfo")[0].get("uri")
                 watching["tv_on"] = True
+                # The TV's web runtime only reports an "iptv" uri; ask whether it's our page.
+                watching["home"] = watching["uri"].startswith("iptv") and bool(
+                    tv.rpc("appControl", "getWebAppStatus")[0].get("active"))
             except Exception:
-                watching["uri"], watching["tv_on"] = None, False
+                watching["uri"], watching["tv_on"], watching["home"] = None, False, False
             ensure_relay()
+            release_relay()
             time.sleep(1.5)
 
     # Roku relay: while the TV shows anything but the Roku's input (normally the tvui
@@ -119,6 +125,19 @@ def make_handler(cfg, tv):
             except Exception as e:
                 print(f"couldn't return to the home screen: {e}", flush=True)
 
+    def release_relay():
+        """The TV is showing the Roku (the Roku tile, or its input picked on the TV):
+        don't leave the relay's screen in front; go to the Roku's own home screen."""
+        if not cfg.get("roku_relay") or not watching["tv_on"] or watching["uri"] != roku_input():
+            return
+        if roku_trip["active"]:
+            return  # an app from a tile is starting or running
+        try:
+            if roku_active_app(cfg.get("roku")) == "dev":
+                roku_key(cfg.get("roku"), "Home")
+        except Exception as e:
+            print(f"relay: couldn't hand the Roku back: {e}", flush=True)
+
     def watch_roku_trips():
         # Poll the Roku quickly (~25 ms per query) only while an app opened from a tile
         # is in front, so leaving it shows the Roku menu as briefly as possible.
@@ -153,7 +172,13 @@ def make_handler(cfg, tv):
 
     paused = {"tv": False}
 
+    # On the tvui home screen, Back would close the page (the TV's web runtime treats it
+    # as "exit app") and Options opens the Sony menu over it; neither is ever wanted there.
+    HOME_IGNORED = {"Return", "Options"}
+
     def press(name):
+        if name in HOME_IGNORED and watching["home"]:
+            return
         if name == "PlayPause":
             # The Roku's Play key is a real toggle; the TV has none, so alternate.
             if not watching_roku():
