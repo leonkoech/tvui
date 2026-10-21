@@ -177,10 +177,26 @@ class TV:
         self.launch("localapp://webappruntime?url=" + quote(url, safe=""))
 
 
-def roku_launch(ip, channel):
+def roku_launch(ip, channel, params=None):
     """Start a channel on a Roku via its External Control Protocol."""
-    req = urllib.request.Request(f"http://{ip}:8060/launch/{channel}", data=b"", method="POST")
+    from urllib.parse import urlencode
+    query = "?" + urlencode(params) if params else ""
+    req = urllib.request.Request(f"http://{ip}:8060/launch/{channel}{query}", data=b"", method="POST")
     urllib.request.urlopen(req, timeout=6).read()
+
+
+def roku_input(ip, params):
+    """Send parameters to the channel running on the Roku (an roInputEvent)."""
+    from urllib.parse import urlencode
+    req = urllib.request.Request(f"http://{ip}:8060/input?{urlencode(params)}", data=b"", method="POST")
+    urllib.request.urlopen(req, timeout=4).read()
+
+
+def roku_active_app(ip):
+    """The id of the channel in front on the Roku ("dev" for a sideloaded one), or None."""
+    with urllib.request.urlopen(f"http://{ip}:8060/query/active-app", timeout=4) as r:
+        m = re.search(r'<app id="([^"]+)"', r.read().decode(errors="ignore"))
+    return m.group(1) if m else None
 
 
 def roku_key(ip, key):

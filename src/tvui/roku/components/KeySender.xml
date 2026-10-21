@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Network calls aren't allowed on the render thread, so key presses are sent from a Task.
+     The Task must never block: setting its "key" field from the render thread waits for
+     this thread to be free, and a stalled render thread makes the Roku auto-repeat the
+     key. So requests are async, one in flight at a time, in the order pressed. -->
+<component name="KeySender" extends="Task">
+  <interface>
+    <field id="server" type="string" />
+    <field id="key" type="string" alwaysNotify="true" />
+  </interface>
+  <script type="text/brightscript"><![CDATA[
+    sub init()
+        m.top.functionName = "run"
+    end sub
+
+    sub run()
+        port = CreateObject("roMessagePort")
+        m.top.observeField("key", port)
+        pending = []
+        busy = invalid
+        while true
+            msg = wait(0, port)
+            if type(msg) = "roSGNodeEvent" then
+                pending.Push(msg.getData())
+            else if type(msg) = "roUrlEvent" then
+                busy = invalid
+            end if
+            if busy = invalid and pending.Count() > 0 then
+                busy = CreateObject("roUrlTransfer")
+                busy.SetMessagePort(port)
+                busy.SetUrl(m.top.server + "/api/key?name=" + pending.Shift())
+                if not busy.AsyncGetToString() then busy = invalid
+            end if
+        end while
+    end sub
+  ]]></script>
+</component>

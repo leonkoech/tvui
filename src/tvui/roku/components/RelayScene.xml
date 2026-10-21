@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="RelayScene" extends="Scene">
+  <interface>
+    <field id="server" type="string" />
+  </interface>
+  <script type="text/brightscript"><![CDATA[
+    sub init()
+        m.top.backgroundURI = ""
+        m.top.backgroundColor = "0x1B0A22FF"
+        ' Roku key name -> tvui remote key name
+        m.keys = {
+            up: "Up", down: "Down", left: "Left", right: "Right",
+            OK: "Confirm", back: "Return", replay: "Return",
+            play: "PlayPause", rewind: "Rewind", fastforward: "Forward",
+            options: "Options"
+        }
+        m.sender = CreateObject("roSGNode", "KeySender")
+        m.sender.control = "RUN"
+        m.top.setFocus(true)
+    end sub
+
+    function onKeyEvent(key as String, press as Boolean) as Boolean
+        name = m.keys[key]
+        if press and name <> invalid and m.top.server <> "" then
+            m.sender.server = m.top.server
+            ' Stamp the press time (ms since epoch) so the server log can show end-to-end lag.
+            now = CreateObject("roDateTime")
+            ms = now.AsSeconds() * 1000& + now.GetMilliseconds()
+            m.sender.key = name + "&t=" + ms.ToStr()
+        end if
+        ' Swallow everything we map, including back, so the relay keeps running.
+        return name <> invalid
+    end function
+  ]]></script>
+  <children>
+    <Label text="tvui remote relay" color="0xF6D6E1FF" translation="[96,72]" />
+    <Label text="The TV is showing tvui. Your Roku remote is controlling it."
+           color="0xFFFFFF99" translation="[96,120]" />
+  </children>
+</component>

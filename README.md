@@ -115,6 +115,37 @@ The TV's own remote works on the home screen too. Use ← and → to move betwee
 tiles. Press ← from the first tile to reach the side menu, which has the Sony
 menu and power.
 
+## Using the Roku remote
+
+If you have a Roku, its remote can control the tvui home screen too. A small
+relay app runs on the Roku and forwards your button presses to tvui, which
+sends them to the TV.
+
+1. Turn on Roku developer mode. On the Roku remote, press **Home ×3, Up ×2,
+   Right, Left, Right, Left, Right**, choose **Enable installer and restart**,
+   and set a password.
+2. Install the relay:
+
+   ```bash
+   tvui roku-install --password <that password>
+   sudo systemctl restart tvui   # or restart `tvui serve`
+   ```
+
+How it works:
+
+- **On the home screen,** the Roku remote's arrows, OK, Back, play/pause,
+  rewind, fast-forward and ✱ control the home screen.
+- **After you open a Roku app** (a `roku` tile), the TV switches to the Roku
+  and the remote works the Roku as usual.
+- **The Roku's Home button** always goes to the Roku's own menu, because no
+  app can intercept it. tvui notices and starts the relay again within a
+  couple of seconds, so you stay in control of the home screen.
+- If the TV jumps to the Roku's input whenever the relay starts, turn off
+  **Settings → System → Control other devices (CEC) → 1-touch play** on the
+  Roku.
+
+The relay's source is in `src/tvui/roku/`.
+
 ## The home screen
 
 When the TV turns on, tvui opens the home screen instead of the last input.
@@ -171,6 +202,7 @@ tvui open              # show the home screen on the TV
 tvui key VolumeUp      # send one remote key
 tvui info              # config path and URLs
 tvui install-service   # start on boot (Linux/systemd)
+tvui roku-install --password <pw>   # let the Roku remote drive the home screen
 ```
 
 ## Troubleshooting

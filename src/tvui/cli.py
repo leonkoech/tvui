@@ -2,6 +2,7 @@
 import argparse
 import getpass
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -85,6 +86,75 @@ def cmd_info(args):
     print(f"phone remote http://{ip}:{cfg['port']}/remote")
 
 
+def _digest(method, uri, user, password, challenge):
+    """An HTTP Digest Authorization header (RFC 2617, MD5, qop=auth) for one request."""
+    import hashlib
+    import uuid
+    f = dict(re.findall(r'(\w+)="?([^",]*)"?', challenge))
+    md5 = lambda s: hashlib.md5(s.encode()).hexdigest()  # noqa: E731
+    ha1, ha2 = md5(f"{user}:{f['realm']}:{password}"), md5(f"{method}:{uri}")
+    nc, cnonce = "00000001", uuid.uuid4().hex[:16]
+    if "qop" in f:
+        resp = md5(f"{ha1}:{f['nonce']}:{nc}:{cnonce}:auth:{ha2}")
+        extra = f', qop=auth, nc={nc}, cnonce="{cnonce}"'
+    else:
+        resp, extra = md5(f"{ha1}:{f['nonce']}:{ha2}"), ""
+    opaque = f', opaque="{f["opaque"]}"' if "opaque" in f else ""
+    return (f'Digest username="{user}", realm="{f["realm"]}", nonce="{f["nonce"]}", '
+            f'uri="{uri}", response="{resp}"{extra}{opaque}')
+
+
+def cmd_roku_install(args):
+    """Sideload the tvui relay channel onto the Roku (needs Roku developer mode)."""
+    import io
+    import urllib.error
+    import urllib.request
+    import uuid
+    import zipfile
+    from tvui.sony import find_roku
+
+    cfg = config.load()
+    ip = args.roku or cfg.get("roku") or find_roku()
+    if not ip:
+        sys.exit("No Roku found. Pass its IP: tvui roku-install --roku 192.168.1.40 --password ...")
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roku")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for root, _, files in os.walk(src):
+            for f in files:
+                full = os.path.join(root, f)
+                z.write(full, os.path.relpath(full, src).replace(os.sep, "/"))
+
+    boundary = uuid.uuid4().hex
+    crlf = "\r\n"
+    head = (f"--{boundary}{crlf}Content-Disposition: form-data; name=\"mysubmit\"{crlf}{crlf}Install{crlf}"
+            f"--{boundary}{crlf}Content-Disposition: form-data; name=\"archive\"; filename=\"tvui-relay.zip\"{crlf}"
+            f"Content-Type: application/zip{crlf}{crlf}")
+    body = head.encode() + buf.getvalue() + f"{crlf}--{boundary}--{crlf}".encode()
+    try:
+        # Get the digest challenge with an empty request first: the Roku drops the
+        # connection if a 401 arrives while the archive is still uploading.
+        try:
+            urllib.request.urlopen(f"http://{ip}/plugin_install", timeout=10)
+            challenge = ""
+        except urllib.error.HTTPError as e:
+            challenge = e.headers.get("WWW-Authenticate", "")
+        headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+        if challenge:
+            headers["Authorization"] = _digest("POST", "/plugin_install", "rokudev", args.password, challenge)
+        req = urllib.request.Request(f"http://{ip}/plugin_install", data=body, headers=headers)
+        page = urllib.request.urlopen(req, timeout=60).read().decode(errors="ignore")
+    except urllib.error.HTTPError as e:
+        sys.exit("The Roku rejected the password." if e.code == 401 else f"Install failed: {e}")
+    except OSError as e:
+        sys.exit(f"Couldn't reach the Roku's developer installer at {ip}. Is developer mode on? ({e})")
+    if "Install Success" not in page and "Identical to previous version" not in page:
+        sys.exit("The Roku didn't confirm the install: " + re.sub(r"<[^>]+>", " ", page)[:400])
+    cfg["roku"], cfg["roku_relay"] = ip, True
+    config.save(cfg)
+    print(f"Installed the tvui relay on the Roku at {ip}. Restart tvui to start using it.")
+
+
 UNIT = """[Unit]
 Description=tvui home screen and remote
 After=network-online.target
@@ -138,6 +208,11 @@ def main():
     s.set_defaults(func=cmd_key)
 
     sub.add_parser("install-service", help="start on boot (Linux/systemd)").set_defaults(func=cmd_install_service)
+
+    s = sub.add_parser("roku-install", help="install the relay so the Roku remote drives the home screen")
+    s.add_argument("--password", required=True, help="the Roku developer-mode password")
+    s.add_argument("--roku", help="Roku IP address (found automatically if omitted)")
+    s.set_defaults(func=cmd_roku_install)
 
     args = p.parse_args()
     args.func(args)

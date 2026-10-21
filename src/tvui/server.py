@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from tvui import config
-from tvui.sony import IRCC, TV, discover, find_roku, roku_key, roku_launch
+from tvui.sony import IRCC, TV, discover, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
 
 # Remote buttons that go to the Roku while the TV shows its input.
 # Volume, mute and power always stay with the TV.
@@ -68,15 +68,43 @@ def make_handler(cfg, tv):
             (t["input"] for t in cfg["tiles"] if t["action"] == "roku"), None)
 
     # The TV's current input, refreshed in the background so a key press never waits on it.
-    watching = {"uri": None}
+    watching = {"uri": None, "tv_on": False}
 
     def track_input():
         while True:
             try:
                 watching["uri"] = tv.rpc("avContent", "getPlayingContentInfo")[0].get("uri")
+                watching["tv_on"] = True
             except Exception:
-                watching["uri"] = None  # e.g. the tvui home screen, which has no input
+                watching["uri"], watching["tv_on"] = None, False
+            ensure_relay()
             time.sleep(1.5)
+
+    # Roku relay: while the TV shows anything but the Roku's input (normally the tvui
+    # home screen), keep the tvui relay channel in front on the Roku so the Roku
+    # remote's presses come to us. Pressing Home on the Roku remote exits it; this
+    # brings it back within a couple of seconds.
+    from tvui.cli import local_ip
+    relay = {"last": 0.0, "server": None, "told": False}
+
+    def ensure_relay():
+        if not cfg.get("roku_relay") or not watching["tv_on"] or roku_input() is None:
+            return
+        if watching["uri"] == roku_input() or time.time() - relay["last"] < 3:
+            return
+        try:
+            relay["server"] = relay["server"] or f"http://{local_ip(cfg['tv'])}:{cfg['port']}"
+            if roku_active_app(cfg.get("roku")) != "dev":
+                relay["last"] = time.time()
+                roku_launch(cfg.get("roku"), "dev", {"server": relay["server"]})
+                relay["told"] = True
+            elif not relay["told"]:
+                # Already running (e.g. started by the installer): tell it where we are.
+                roku_send_input(cfg.get("roku"), {"server": relay["server"]})
+                relay["told"] = True
+        except Exception as e:
+            relay["last"] = time.time()
+            print(f"relay: {e}", flush=True)
 
     threading.Thread(target=track_input, daemon=True).start()
 
