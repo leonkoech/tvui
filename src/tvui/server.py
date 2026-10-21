@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from tvui import config
+from tvui.soundbar import VizioSoundbar
 from tvui.sony import IRCC, TV, discover, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
 
 # Remote buttons that go to the Roku while the TV shows its input.
@@ -179,7 +180,20 @@ def make_handler(cfg, tv):
     # as "exit app") and Options opens the Sony menu over it; neither is ever wanted there.
     HOME_IGNORED = {"Return", "Options"}
 
+    # A Vizio soundbar on the TV's optical out ignores the TV's volume, so volume and
+    # mute go to it directly; power follows the TV.
+    bar = VizioSoundbar(cfg["soundbar"]["host"]) if cfg.get("soundbar") else None
+    BAR_KEYS = {"VolumeUp", "VolumeDown", "Mute"}
+
     def press(name):
+        if bar and name in BAR_KEYS:
+            bar.key(name)
+            return
+        if bar and name == "PowerOff":
+            try:
+                bar.key("PowerOff")
+            except Exception as e:
+                print(f"soundbar: couldn't power off: {e}", flush=True)
         if name in HOME_IGNORED and watching["home"]:
             return
         if name == "PlayPause":
@@ -312,6 +326,11 @@ def _home_on_power_loop(cfg, tv, home_url):
         time.sleep(1)
         on = tv.power_quick() == "active"
         if on and not was_on:
+            if cfg.get("soundbar"):
+                try:
+                    VizioSoundbar(cfg["soundbar"]["host"]).key("PowerOn")
+                except Exception as e:
+                    print(f"soundbar: couldn't power on: {e}", flush=True)
             # Launch right away and keep retrying: a TV still booting may refuse the
             # launch, or accept it and then fall back to its last input, so confirm.
             start = time.time()

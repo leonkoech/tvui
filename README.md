@@ -146,6 +146,44 @@ How it works:
 
 The relay's source is in `src/tvui/roku/`.
 
+## A Vizio soundbar
+
+If your sound goes to a Vizio SmartCast soundbar, for example over optical,
+the TV's own volume doesn't reach it. tvui can control the soundbar directly
+over the network. Tested with an SB3821-D6.
+
+1. Connect the soundbar to your network. Plug its Ethernet port into your
+   router, or into the tvui computer (see below). You can also join it to
+   Wi-Fi with the VIZIO app.
+2. Add it to `~/.config/tvui/config.json` and restart tvui:
+
+   ```json
+   "soundbar": { "type": "vizio", "host": "192.168.1.60:9000" }
+   ```
+
+Then:
+
+- The phone remote's **volume** and **mute** buttons control the soundbar. No
+  pairing is needed for soundbars.
+- When the TV turns on, the soundbar turns on too, and **power** turns both off.
+- To stop the soundbar from switching itself off when nothing is playing, turn
+  off **Eco Power** (Vizio also calls it Energy Star). Hold **Power** and
+  **Volume Down** on the soundbar for 5 seconds, or run:
+
+  ```bash
+  python3 -c "from tvui.soundbar import VizioSoundbar as V; V('192.168.1.60').set_setting('system/eco_power', 'Off')"
+  ```
+
+**Soundbar plugged into the tvui computer (Linux).** To give the soundbar an
+address and share the computer's connection with it, run:
+
+```bash
+sudo nmcli con add type ethernet ifname <ethernet device> con-name soundbar ipv4.method shared ipv6.method ignore
+```
+
+To keep the soundbar's address fixed, add `dhcp-host=<soundbar MAC>,10.42.0.50`
+to `/etc/NetworkManager/dnsmasq-shared.d/soundbar.conf`.
+
 ## The home screen
 
 When the TV turns on, tvui opens the home screen instead of the last input.
