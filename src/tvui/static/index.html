@@ -181,15 +181,29 @@ document.onkeydown = function (e) {
   return false;
 };
 
+// The TV's own clock and timezone are often wrong, so show the server's local time:
+// keep the gap between the two clocks and read the result as UTC fields.
+var clockShift = null;
+
+function syncClock() {
+  get("/api/time", function (status, body) {
+    if (status !== 200) return;
+    var t = JSON.parse(body);
+    clockShift = t.epoch_ms - new Date().getTime() + t.utc_offset_min * 60000;
+    tick();
+  });
+}
+
 function tick() {
-  var d = new Date(), h = d.getHours(), m = d.getMinutes();
+  if (clockShift === null) return;  // don't show the TV's wrong time while waiting
+  var d = new Date(new Date().getTime() + clockShift), h = d.getUTCHours(), m = d.getUTCMinutes();
   document.getElementById("clock").innerHTML =
     (h % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
   document.getElementById("date").innerHTML =
-    ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()] + ", " +
-    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()] + " " + d.getDate();
+    ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
+    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()] + " " + d.getUTCDate();
 }
-tick(); setInterval(tick, 10000);
+syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
 
 get("/api/tiles", function (status, body) {
   if (status === 200) { tiles = JSON.parse(body); build(); }

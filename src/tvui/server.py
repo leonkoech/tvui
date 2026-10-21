@@ -151,6 +151,11 @@ def make_handler(cfg, tv):
             if ext in TYPES and os.path.isfile(os.path.join(STATIC, name)):
                 with open(os.path.join(STATIC, name), "rb") as f:
                     return self._send(200, f.read(), TYPES[ext])
+            if url.path == "/api/time":
+                # The TV's own clock is often wrong; the page shows this machine's local time.
+                now = time.time()
+                offset = time.localtime(now).tm_gmtoff // 60
+                return self._send(200, json.dumps({"epoch_ms": int(now * 1000), "utc_offset_min": offset}))
             if url.path == "/api/tiles":
                 tiles = [{k: t.get(k) for k in ("name", "action", "label") if t.get(k)}
                          for t in cfg["tiles"]]
