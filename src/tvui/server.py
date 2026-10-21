@@ -39,6 +39,7 @@ def make_handler(cfg, tv):
                 tv.key(t["value"])
             elif t["action"] == "roku":
                 watching["uri"] = t["input"]
+                roku_trip.update(active=True, app_seen=False, since=time.time())
                 tv.set_input(t["input"])
                 launch_on_roku(t["value"])
         elif path == "/api/key":
@@ -78,6 +79,7 @@ def make_handler(cfg, tv):
             except Exception:
                 watching["uri"], watching["tv_on"] = None, False
             ensure_relay()
+            return_from_roku()
             time.sleep(1.5)
 
     # Roku relay: while the TV shows anything but the Roku's input (normally the tvui
@@ -86,6 +88,33 @@ def make_handler(cfg, tv):
     # brings it back within a couple of seconds.
     from tvui.cli import local_ip
     relay = {"last": 0.0, "server": None, "told": False}
+
+    # After a roku tile, leaving that app (Back) lands on the Roku's own home screen.
+    # Treat that as "done with the app" and bring the TV back to the tvui home screen.
+    roku_trip = {"active": False, "app_seen": False, "since": 0.0}
+
+    def return_from_roku():
+        if not roku_trip["active"]:
+            return
+        if not watching["tv_on"] or watching["uri"] != roku_input():
+            # Right after the tile the TV still reports its old input for a moment.
+            if time.time() - roku_trip["since"] > 10:
+                roku_trip["active"] = False  # the TV went elsewhere; nothing to undo
+            return
+        try:
+            app = roku_active_app(cfg.get("roku"))
+        except Exception:
+            return
+        if app not in (None, "home", "dev"):
+            roku_trip["app_seen"] = True
+        elif app == "home" and roku_trip["app_seen"]:
+            roku_trip["active"] = False
+            watching["uri"] = None
+            try:
+                tv.open_url(f"http://{local_ip(cfg['tv'])}:{cfg['port']}/")
+                print("left the Roku app: back to the home screen", flush=True)
+            except Exception as e:
+                print(f"couldn't return to the home screen: {e}", flush=True)
 
     def ensure_relay():
         if not cfg.get("roku_relay") or not watching["tv_on"] or roku_input() is None:

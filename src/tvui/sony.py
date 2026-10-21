@@ -193,10 +193,17 @@ def roku_input(ip, params):
 
 
 def roku_active_app(ip):
-    """The id of the channel in front on the Roku ("dev" for a sideloaded one), or None."""
+    """The id of the channel in front on the Roku ("dev" for a sideloaded one),
+    "home" for the Roku's own home screen, or None."""
     with urllib.request.urlopen(f"http://{ip}:8060/query/active-app", timeout=4) as r:
-        m = re.search(r'<app id="([^"]+)"', r.read().decode(errors="ignore"))
-    return m.group(1) if m else None
+        xml = r.read().decode(errors="ignore")
+    m = re.search(r'<app\b([^>]*)>', xml)
+    if not m:
+        return None
+    attrs = m.group(1)
+    if 'type="home"' in attrs or 'id=' not in attrs:  # older Roku OS: <app>Roku</app>
+        return "home"
+    return re.search(r'id="([^"]+)"', attrs).group(1)
 
 
 def roku_key(ip, key):
