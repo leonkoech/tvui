@@ -79,7 +79,6 @@ def make_handler(cfg, tv):
             except Exception:
                 watching["uri"], watching["tv_on"] = None, False
             ensure_relay()
-            return_from_roku()
             time.sleep(1.5)
 
     # Roku relay: while the TV shows anything but the Roku's input (normally the tvui
@@ -110,11 +109,22 @@ def make_handler(cfg, tv):
         elif app == "home" and roku_trip["app_seen"]:
             roku_trip["active"] = False
             watching["uri"] = None
+            # Put the relay back on the Roku while the TV switches, so the Roku menu
+            # isn't left in front for the remote either.
+            relay["last"] = 0.0
+            threading.Thread(target=ensure_relay, daemon=True).start()
             try:
                 tv.open_url(f"http://{local_ip(cfg['tv'])}:{cfg['port']}/")
                 print("left the Roku app: back to the home screen", flush=True)
             except Exception as e:
                 print(f"couldn't return to the home screen: {e}", flush=True)
+
+    def watch_roku_trips():
+        # Poll the Roku quickly (~25 ms per query) only while an app opened from a tile
+        # is in front, so leaving it shows the Roku menu as briefly as possible.
+        while True:
+            return_from_roku()
+            time.sleep(0.3 if roku_trip["active"] else 1.0)
 
     def ensure_relay():
         if not cfg.get("roku_relay") or not watching["tv_on"] or roku_input() is None:
@@ -136,6 +146,7 @@ def make_handler(cfg, tv):
             print(f"relay: {e}", flush=True)
 
     threading.Thread(target=track_input, daemon=True).start()
+    threading.Thread(target=watch_roku_trips, daemon=True).start()
 
     def watching_roku():
         return roku_input() is not None and watching["uri"] == roku_input()
