@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TV Remote">
-<meta name="theme-color" content="#F6D6E1">
+<meta name="theme-color" content="#F8D3DF">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="icon" type="image/png" href="/icon-512.png">
 <link rel="manifest" href="/manifest.json">
@@ -16,13 +16,13 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 500; src: url(/instrument-sans-500.woff2) format("woff2"), url(/instrument-sans-500.woff) format("woff"); }
   @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
 
-  /* Palette from the app icon: pastel blur wash, plum D-pad. */
-  :root { --blush: #F6D6E1; --plum: #5B2A6E; --plum-dark: #431D54; --ink: #4A2358;
-    --glass: rgba(255,255,255,.58); --shadow: rgba(91,42,110,.14); }
+  /* Palette from the app icon: pastel pink wash, sage D-pad, a pink flower for OK. */
+  :root { --blush: #F8D3DF; --sage: #647C5C; --sage-dark: #4E6448; --rose: #DC6489; --sun: #F9D56E;
+    --ink: #4E6448; --glass: rgba(255,255,255,.6); --shadow: rgba(78,100,72,.16); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { min-height: 100%; background: var(--blush); }
   body { margin: 0; min-height: 100vh; color: var(--ink);
-    background: #ecd3dc url(/remote-bg.jpg) center / cover no-repeat fixed;
+    background: #f6d3de url(/remote-bg.jpg) center / cover no-repeat fixed;
     font-family: "Instrument Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
     -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   .wrap { max-width: 420px; margin: 0 auto;
@@ -31,7 +31,7 @@
   .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
   button { border: 0; padding: 0; color: var(--ink); font: inherit; cursor: pointer;
     display: grid; place-items: center; }
-  /* Frosted-white pills with plum icons; the D-pad is the only saturated object. */
+  /* Frosted-white pills with sage icons; the D-pad is the only saturated object. */
   .pill, .sq { background: var(--glass); border: 1px solid rgba(255,255,255,.7);
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
     box-shadow: 0 5px 16px var(--shadow); transition: transform .12s, background .12s; }
@@ -43,12 +43,12 @@
     stroke-linecap: round; stroke-linejoin: round; }
   svg.fill { fill: var(--ink); stroke: none; }
 
-  /* D-pad: plum cross on a frosted disc, one soft shadow like the icon */
+  /* D-pad: sage cross on a frosted disc, one soft shadow like the icon */
   .disc { position: relative; width: min(84vw, 340px); aspect-ratio: 1; margin: 6px auto;
     border-radius: 50%; background: rgba(255,255,255,.3); border: 1px solid rgba(255,255,255,.55); }
   .cross { position: absolute; inset: 6%; }
-  .shape { position: absolute; inset: 0; filter: drop-shadow(0 13px 19px rgba(67,29,84,.35)); }
-  .arm { position: absolute; background: var(--plum); }
+  .shape { position: absolute; inset: 0; filter: drop-shadow(0 13px 19px rgba(160,80,110,.35)); }
+  .arm { position: absolute; background: var(--sage); }
   .arm.v { left: 33%; width: 34%; top: 0; bottom: 0; border-radius: 22% / 12%; }
   .arm.h { top: 33%; height: 34%; left: 0; right: 0; border-radius: 12% / 22%; }
   .dir { position: absolute; background: transparent; width: 34%; height: 33%; border-radius: 18px; }
@@ -57,15 +57,16 @@
   .dir svg { width: 34px; height: 34px; stroke: #fff; stroke-width: 2.8; }
   .up { left: 33%; top: 0; } .down { left: 33%; bottom: 0; }
   .left { top: 33%; left: 0; width: 33%; height: 34%; } .right { top: 33%; right: 0; width: 33%; height: 34%; }
-  .ok { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; border-radius: 50%;
-    background: var(--plum-dark); color: #fff; font-size: 26px; font-weight: 600; letter-spacing: 1px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); transition: transform .12s, background .12s; }
-  .ok.hit { transform: scale(.94); background: #2f1240; }
+  /* OK is the icon's flower: five pink petals and a yellow center. */
+  .ok { position: absolute; left: 31%; top: 31%; width: 38%; height: 38%; background: transparent;
+    transition: transform .12s; }
+  .ok svg { width: 100%; height: 100%; stroke: none; }
+  .ok.hit { transform: scale(.9) rotate(18deg); }
 
   /* Power: the one warm accent, findable but not tempting */
   .power { background: rgba(255,255,255,.7); }
-  .power svg { stroke: #C4456B; }
-  .msg { text-align: center; font-size: 13px; color: rgba(74,35,88,.75); min-height: 16px; margin-top: -10px; }
+  .power svg { stroke: var(--rose); }
+  .msg { text-align: center; font-size: 13px; color: rgba(78,100,72,.8); min-height: 16px; margin-top: -10px; }
 </style>
 </head>
 <body>
@@ -81,7 +82,7 @@
       <div class="shape"><div class="arm v"></div><div class="arm h"></div></div>
       <button class="dir up" data-k="Up" aria-label="Up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
       <button class="dir left" data-k="Left" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <button class="ok" data-k="Confirm">OK</button>
+      <button class="ok" data-k="Confirm" aria-label="OK"><svg viewBox="-12 -12 24 24"><g fill="#DC6489"><circle cx="0" cy="-5.6" r="4.4"/><circle cx="5.33" cy="-1.73" r="4.4"/><circle cx="3.29" cy="4.53" r="4.4"/><circle cx="-3.29" cy="4.53" r="4.4"/><circle cx="-5.33" cy="-1.73" r="4.4"/></g><circle r="3.2" fill="#F9D56E"/></svg></button>
       <button class="dir right" data-k="Right" aria-label="Right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <button class="dir down" data-k="Down" aria-label="Down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>

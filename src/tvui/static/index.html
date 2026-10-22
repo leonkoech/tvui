@@ -71,38 +71,42 @@
   .pi b { display: block; font-size: 1.25rem; font-weight: 600; margin-top: .25rem; }
   .pi span { display: block; font-size: .9rem; margin-top: .15rem; }
 
-  /* Screensaver, "painted on the wall": after a few idle minutes, the plain cottage photo with
-     the greeting, clock and weather lettered straight onto the plaster in leaf-green, with a
-     soft white halo where petals reach in. It only redraws once a minute. */
+  /* Screensaver, "painted on the wall": the welcome and the time + weather are lettered in
+     leaf-green straight onto the two stretches of plaster between the photo's windows
+     (positions tuned to this image). Only the hint is glass: a pre-blurred copy of the photo
+     (saver-blur.jpg) lined up with the spot it covers, since live blur is too slow on this TV. */
   #saver { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; color: #23402f;
     font-family: "Figtree", "Helvetica Neue", Arial, sans-serif;
     background-color: #f6f3ee; background-image: url(/saver.jpg); background-repeat: no-repeat;
     background-position: center; -webkit-background-size: cover; background-size: cover; }
   #saver.on { display: block; }
-  #saver .wall, #saver .wx { text-shadow: 0 0 .5rem rgba(255,255,255,.7); }
-  /* Frosted panels are baked into saver.jpg (see make_saver.py); these boxes line up with them. */
-  #saver .wall { position: absolute; left: 17.4rem; top: 12.4rem; width: 29rem; height: 21.4rem;
-    padding: 2rem 2.4rem; -webkit-box-sizing: border-box; box-sizing: border-box; }
+  #saver .wall, #saver .right { position: absolute; width: 16rem; text-align: center;
+    text-shadow: 0 0 .9rem rgba(255,255,255,.95), 0 0 .25rem rgba(255,255,255,.9); }
+  #saver .wall { left: 17.5rem; top: 16.6rem; }
+  #saver .right { left: 44.9rem; top: 15.8rem; }
   #saver .hello, #saver .names, #saver .clock, #saver .wxt { font-family: "Cormorant Garamond", Georgia, serif; }
-  /* Cormorant's numbers are old-style by default (the 4 drops below the line); use even-height ones. */
-  #saver .clock, #saver .wxt { -webkit-font-feature-settings: "lnum" 1, "tnum" 1; font-feature-settings: "lnum" 1, "tnum" 1;
-    font-variant-numeric: lining-nums tabular-nums; }
-
-  #saver .hello { font-size: 1.9rem; font-style: italic; font-weight: 500; color: #3d5747; }
-  #saver .names { font-size: 3.8rem; font-weight: 600; letter-spacing: -.02rem; line-height: .98; margin-top: .1rem; }
+  #saver .clock, #saver .wxt { -webkit-font-feature-settings: "lnum" 1, "tnum" 1; font-feature-settings: "lnum" 1, "tnum" 1; }
+  #saver .hello { font-size: 1.7rem; font-style: italic; font-weight: 500; line-height: 1.1; color: #3d5747; }
+  #saver .names { font-size: 3.5rem; font-weight: 600; line-height: .95; margin-top: .3rem; }
   #saver .names b { font-style: italic; font-weight: 500; color: #d2537f; }
-  #saver .clock { font-size: 5.4rem; font-weight: 600; line-height: .95; margin-top: 1.2rem; white-space: nowrap; }
-  #saver .day { font-size: 1.3rem; font-weight: 600; color: #3d5747; margin-top: .5rem; }
-  #saver .wx { position: absolute; right: 15.6rem; top: 12.4rem; width: 16.4rem; height: 12.6rem; padding: 1.8rem 2.2rem;
-    -webkit-box-sizing: border-box; box-sizing: border-box; text-align: right; visibility: hidden; }
+  #saver .clock { font-size: 5rem; font-weight: 600; line-height: .95; white-space: nowrap; }
+  #saver .clock small { font-size: 1.7rem; margin-left: .35rem; }
+  #saver .day { font-size: 1.15rem; font-weight: 600; color: #3d5747; margin-top: .35rem; }
+  #saver .wx { margin-top: 1.2rem; visibility: hidden; }
   #saver .wx.ready { visibility: visible; }
-  #saver .wxi { display: inline-block; width: 3.6rem; height: 3.6rem; vertical-align: middle; margin-right: .5rem; }
-  #saver .wxt { display: inline-block; vertical-align: middle; font-size: 5.4rem; font-weight: 600; line-height: 1; }
-  #saver .wxc { font-size: 1.35rem; font-weight: 600; margin-top: .3rem; }
-  #saver .wxr { font-size: 1.1rem; color: #3d5747; margin-top: .2rem; }
+  #saver .wxi { display: inline-block; width: 2.5rem; height: 2.5rem; vertical-align: middle; margin-right: .35rem; }
+  #saver .wxt { display: inline-block; vertical-align: middle; font-size: 2.6rem; font-weight: 600; line-height: 1; }
+  #saver .wxc { font-size: 1.1rem; font-weight: 600; margin-top: .15rem; }
+  #saver .wxr { font-size: 1rem; color: #3d5747; margin-top: .1rem; }
   #saver .hint { position: absolute; left: 0; right: 0; bottom: 2.2rem; text-align: center; }
-  #saver .hint span { display: inline-block; padding: 0 1.4rem; line-height: 2.6rem; border-radius: 1.3rem;
-    font-size: 1.05rem; font-weight: 600; background: rgba(252,250,246,.9); color: #23402f; }
+  #saver .glass { position: relative; display: inline-block; white-space: nowrap; overflow: hidden;
+    line-height: 2.8rem; border-radius: 1.4rem; background-color: rgba(255,255,255,.5);
+    background-image: url(/saver-blur.jpg); background-repeat: no-repeat;
+    -webkit-background-size: 80rem 45rem; background-size: 80rem 45rem;
+    border: .06rem solid rgba(255,255,255,.55);
+    box-shadow: inset 0 .08rem 0 rgba(255,255,255,.85), 0 .5rem 1.6rem rgba(35,64,47,.18), 0 .1rem .3rem rgba(35,64,47,.12); }
+  #saver .tint { display: block; padding: 0 1.6rem; background: rgba(255,255,255,.46);
+    font-size: 1.1rem; font-weight: 600; color: #23402f; }
 
   .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.6); }
 </style>
@@ -125,12 +129,12 @@
 <div id="panel"><div class="ph">Inputs</div><div id="plist"></div></div>
 <div class="note" id="note"></div>
 <div id="saver">
-  <div class="wall" id="swall"><div class="hello" id="shello"></div>
-    <div class="names">Coco <b>&amp;</b><br>Genichi</div>
-    <div class="clock" id="stime"></div><div class="day" id="sdate"></div></div>
-  <div class="wx" id="swx"><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span>
-    <div class="wxc" id="swxc"></div><div class="wxr" id="swxr"></div></div>
-  <div class="hint"><span>Press any button to open your apps</span></div>
+  <div class="wall"><div class="hello" id="shello"></div>
+    <div class="names">Coco <b>&amp;</b><br>Genichi</div></div>
+  <div class="right"><div class="clock" id="stime"></div><div class="day" id="sdate"></div>
+    <div class="wx" id="swx"><div><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span></div>
+      <div class="wxc" id="swxc"></div><div class="wxr" id="swxr"></div></div></div>
+  <div class="hint"><span class="glass" id="sglass"><span class="tint">Press any button to open your apps</span></span></div>
 </div></div>
 
 <script>
@@ -330,15 +334,19 @@ function greeting(h) {
          h >= 17 && h < 22 ? "Good evening," : "Good night,";
 }
 
+// Line the pre-blurred photo up with the spot the glass pill covers.
+function alignGlass() {
+  var g = document.getElementById("sglass"), r = g.getBoundingClientRect();
+  g.style.backgroundPosition = (-r.left) + "px " + (-r.top) + "px";
+}
+
 function updateSaver() {
   if (!saverOn) return;
-  document.getElementById("stime").innerHTML = tick.clock || "";
+  var c = tick.clock || "", sp = c.lastIndexOf(" ");
+  document.getElementById("stime").innerHTML = sp > 0 ? c.slice(0, sp) + "<small>" + c.slice(sp + 1) + "</small>" : c;
+  alignGlass();
   document.getElementById("sdate").innerHTML = tick.longDate || "";
   document.getElementById("shello").innerHTML = greeting(tick.hour || 0);
-  var d = DRIFT[drift++ % DRIFT.length];
-  var w = document.getElementById("swall"), x = document.getElementById("swx");
-  w.style.marginLeft = d[0] + "rem"; w.style.marginTop = d[1] + "rem";
-  x.style.marginRight = d[0] + "rem"; x.style.marginTop = d[1] + "rem";
 }
 
 // Weather icons, drawn in the leaf-green ink with a few colored accents.
@@ -374,6 +382,7 @@ function refreshWeather() {
     document.getElementById("swxi").innerHTML = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#23402f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + WX_ICONS[kind[0]] + "</svg>";
     document.getElementById("swxt").innerHTML = w.temp + "&deg;";
     document.getElementById("swxc").innerHTML = kind[1] + (w.place ? " in " + w.place : "");
+    alignGlass();
     document.getElementById("swxr").innerHTML = w.high != null ? "High " + w.high + "&deg;, low " + w.low + "&deg;" : "";
     document.getElementById("swx").className = "wx ready";
   });
@@ -448,7 +457,7 @@ function tick() {
   // Only write when it changes: every write repaints the whole screen on this TV.
   if (clock !== tick.clock) {
     tick.clock = clock; document.getElementById("clock").innerHTML = clock;
-    if (saverOn) document.getElementById("stime").innerHTML = clock;
+    if (saverOn) updateSaver();
   }
   if (date !== tick.date) { tick.date = date; document.getElementById("date").innerHTML = date; }
 }
