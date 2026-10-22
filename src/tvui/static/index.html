@@ -79,19 +79,22 @@
     background-color: #f6f3ee; background-image: url(/saver.jpg); background-repeat: no-repeat;
     background-position: center; -webkit-background-size: cover; background-size: cover; }
   #saver.on { display: block; }
-  #saver .wall, #saver .wx { text-shadow: 0 0 .9rem rgba(255,255,255,.95), 0 0 .25rem rgba(255,255,255,.9); }
-  #saver .wall { position: absolute; left: 18.6rem; top: 14.2rem; width: 30rem; }
+  #saver .wall, #saver .wx { text-shadow: 0 0 .5rem rgba(255,255,255,.7); }
+  /* Frosted panels are baked into saver.jpg (see make_saver.py); these boxes line up with them. */
+  #saver .wall { position: absolute; left: 17.4rem; top: 12.4rem; width: 29rem; height: 21.4rem;
+    padding: 2rem 2.4rem; -webkit-box-sizing: border-box; box-sizing: border-box; }
   #saver .hello, #saver .names, #saver .clock, #saver .wxt { font-family: "Cormorant Garamond", Georgia, serif; }
   /* Cormorant's numbers are old-style by default (the 4 drops below the line); use even-height ones. */
   #saver .clock, #saver .wxt { -webkit-font-feature-settings: "lnum" 1, "tnum" 1; font-feature-settings: "lnum" 1, "tnum" 1;
     font-variant-numeric: lining-nums tabular-nums; }
-  #saver .hello { text-shadow: 0 0 .7rem #fff, 0 0 .3rem #fff, 0 0 .12rem #fff; }
+
   #saver .hello { font-size: 1.9rem; font-style: italic; font-weight: 500; color: #3d5747; }
   #saver .names { font-size: 3.8rem; font-weight: 600; letter-spacing: -.02rem; line-height: .98; margin-top: .1rem; }
   #saver .names b { font-style: italic; font-weight: 500; color: #d2537f; }
-  #saver .clock { font-size: 5.8rem; font-weight: 600; line-height: .95; margin-top: 1.2rem; }
+  #saver .clock { font-size: 5.4rem; font-weight: 600; line-height: .95; margin-top: 1.2rem; white-space: nowrap; }
   #saver .day { font-size: 1.3rem; font-weight: 600; color: #3d5747; margin-top: .5rem; }
-  #saver .wx { position: absolute; right: 20.2rem; top: 14.6rem; width: 15rem; text-align: right; visibility: hidden; }
+  #saver .wx { position: absolute; right: 15.6rem; top: 12.4rem; width: 16.4rem; height: 12.6rem; padding: 1.8rem 2.2rem;
+    -webkit-box-sizing: border-box; box-sizing: border-box; text-align: right; visibility: hidden; }
   #saver .wx.ready { visibility: visible; }
   #saver .wxi { display: inline-block; width: 3.6rem; height: 3.6rem; vertical-align: middle; margin-right: .5rem; }
   #saver .wxt { display: inline-block; vertical-align: middle; font-size: 5.4rem; font-weight: 600; line-height: 1; }
@@ -123,7 +126,7 @@
 <div class="note" id="note"></div>
 <div id="saver">
   <div class="wall" id="swall"><div class="hello" id="shello"></div>
-    <div class="names">Coco <b>&amp;</b> Genichi</div>
+    <div class="names">Coco <b>&amp;</b><br>Genichi</div>
     <div class="clock" id="stime"></div><div class="day" id="sdate"></div></div>
   <div class="wx" id="swx"><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span>
     <div class="wxc" id="swxc"></div><div class="wxr" id="swxr"></div></div>
@@ -305,7 +308,7 @@ function run(i) {
 
 var SAVER_AFTER = 5 * 60000, lastKey = new Date().getTime(), saverOn = false, drift = 0;
 // Small shifts each minute so nothing burns in (rem offsets from the base layout).
-var DRIFT = [[0, 0], [1.2, -.8], [-.8, .8], [1.6, .6], [.4, -1.2]];
+var DRIFT = [[0, 0]];  // text stays on its baked-in glass
 
 new Image().src = "/saver.jpg";  // load it now so the screensaver appears without a blank flash
 document.getElementById("saver").style.visibility = "hidden";  // laid out (fonts load) but not shown
