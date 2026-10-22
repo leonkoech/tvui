@@ -35,3 +35,16 @@ sub Main(args as Dynamic)
         end if
     end while
 end sub
+
+' The tvui screensaver (Settings > Theme > Screensaver > tvui).
+sub RunScreenSaver()
+    screen = CreateObject("roSGScreen")
+    port = CreateObject("roMessagePort")
+    screen.setMessagePort(port)
+    screen.CreateScene("SaverScene")
+    screen.show()
+    while true
+        msg = wait(0, port)
+        if type(msg) = "roSGScreenEvent" and msg.isScreenClosed() then return
+    end while
+end sub

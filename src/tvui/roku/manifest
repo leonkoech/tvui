@@ -1,9 +1,10 @@
 title=tvui relay
 major_version=1
 minor_version=0
-build_version=4
+build_version=7
 mm_icon_focus_fhd=pkg:/images/icon_fhd.png
 mm_icon_focus_hd=pkg:/images/icon_hd.png
 splash_color=#000000
 splash_min_time=0
 ui_resolutions=fhd
+screensaver_title=tvui

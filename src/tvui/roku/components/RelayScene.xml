@@ -6,7 +6,7 @@
   <script type="text/brightscript"><![CDATA[
     sub init()
         m.top.backgroundURI = ""
-        m.top.backgroundColor = "0x1B0A22FF"
+        m.top.backgroundColor = "0x281030FF"
         ' Roku key name -> tvui remote key name
         m.keys = {
             up: "Up", down: "Down", left: "Left", right: "Right",
@@ -33,8 +33,6 @@
     end function
   ]]></script>
   <children>
-    <Label text="tvui remote relay" color="0xF6D6E1FF" translation="[96,72]" />
-    <Label text="The TV is showing tvui. Your Roku remote is controlling it."
-           color="0xFFFFFF99" translation="[96,120]" />
+    <Backdrop id="backdrop" />
   </children>
 </component>

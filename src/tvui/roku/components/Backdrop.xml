@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- The tvui look on the Roku: the cottage photo with the time, a greeting and the weather,
+     in Instrument Sans. Used by the screensaver and behind the relay. -->
+<component name="Backdrop" extends="Group">
+  <interface>
+    <field id="greeting" type="string" value="Welcome, Coco &amp; Genichi" onChange="onGreeting" />
+    <field id="drift" type="boolean" value="false" />
+  </interface>
+  <script type="text/brightscript"><![CDATA[
+    sub init()
+        m.text = m.top.findNode("text")
+        m.time = m.top.findNode("time")
+        m.date = m.top.findNode("date")
+        m.hello = m.top.findNode("hello")
+        m.weather = m.top.findNode("weather")
+        m.hello.text = m.top.greeting
+
+        m.clock = m.top.findNode("clock")
+        m.clock.observeField("fire", "tick")
+        m.clock.control = "start"
+        m.ticks = 0
+        tick()
+
+        m.fetch = CreateObject("roSGNode", "WeatherTask")
+        m.fetch.observeField("result", "onWeather")
+        m.fetch.control = "RUN"
+    end sub
+
+    sub onGreeting()
+        m.hello.text = m.top.greeting
+    end sub
+
+    sub tick()
+        now = CreateObject("roDateTime")
+        now.ToLocalTime()
+        h = now.GetHours()
+        mins = now.GetMinutes()
+        h12 = h mod 12
+        if h12 = 0 then h12 = 12
+        ampm = "AM"
+        if h >= 12 then ampm = "PM"
+        mm = mins.ToStr()
+        if mins < 10 then mm = "0" + mm
+        m.time.text = h12.ToStr() + ":" + mm + " " + ampm
+        m.date.text = now.GetWeekday() + ", " + monthName(now.GetMonth()) + " " + now.GetDayOfMonth().ToStr()
+        ' As a screensaver, move the text a little each minute so nothing burns in.
+        m.ticks = m.ticks + 1
+        if m.top.drift and m.ticks mod 6 = 0 then
+            spots = [[110, 640], [150, 610], [110, 580], [190, 640], [150, 660]]
+            p = spots[(m.ticks / 6) mod spots.Count()]
+            m.text.translation = p
+        end if
+    end sub
+
+    function monthName(n as Integer) as String
+        names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        return names[n - 1]
+    end function
+
+    sub onWeather()
+        w = m.fetch.result
+        if w <> invalid and w.temp <> invalid then
+            line = w.temp.ToStr() + Chr(176) + " " + w.text
+            if w.place <> invalid and w.place <> "" then line = line + "  ·  " + w.place
+            m.weather.text = line
+        end if
+    end sub
+  ]]></script>
+  <children>
+    <Poster uri="pkg:/images/cottage.jpg" width="1920" height="1080" />
+    <Group id="text" translation="[110, 640]">
+      <Label id="time" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="150" />
+      </Label>
+      <Label id="hello" translation="[6, 190]" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="48" />
+      </Label>
+      <Label id="date" translation="[6, 262]" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="34" />
+      </Label>
+      <Label id="weather" translation="[6, 312]" color="0xFFFFFFFF">
+        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="34" />
+      </Label>
+    </Group>
+    <Timer id="clock" repeat="true" duration="10" />
+  </children>
+</component>

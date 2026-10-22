@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- The tvui screensaver: Settings > Theme > Screensaver > tvui. -->
+<component name="SaverScene" extends="Scene">
+  <script type="text/brightscript"><![CDATA[
+    sub init()
+        m.top.backgroundURI = ""
+        m.top.backgroundColor = "0x281030FF"
+        m.top.findNode("backdrop").drift = true
+    end sub
+  ]]></script>
+  <children>
+    <Backdrop id="backdrop" />
+  </children>
+</component>

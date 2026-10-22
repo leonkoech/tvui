@@ -25,4 +25,4 @@ tvui = "tvui.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-tvui = ["static/*", "roku/manifest", "roku/source/*", "roku/components/*", "roku/images/*"]
+tvui = ["static/*", "roku/manifest", "roku/source/*", "roku/components/*", "roku/images/*", "roku/fonts/*"]

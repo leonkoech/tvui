@@ -144,6 +144,14 @@ How it works:
   **Settings → System → Control other devices (CEC) → 1-touch play** on the
   Roku.
 
+The relay app also includes a **screensaver** called "tvui": a photo with the
+time, a greeting, and the weather (from `/api/weather`, via Open-Meteo, with
+the location estimated once from your IP). To use it, choose **Settings →
+Theme → Screensaver → tvui** on the Roku. To change the photo or the greeting,
+edit `src/tvui/roku/images/cottage.jpg` and `components/Backdrop.xml`, then run
+`tvui roku-install` again. To set the weather location, add
+`"weather": {"lat": 27.4, "lon": -80.3, "place": "Ft. Pierce"}` to the config.
+
 The relay's source is in `src/tvui/roku/`.
 
 ## A Vizio soundbar

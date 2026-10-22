@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Fetches /api/weather from the tvui server (address saved by the relay) every 10 minutes. -->
+<component name="WeatherTask" extends="Task">
+  <interface>
+    <field id="result" type="assocarray" />
+  </interface>
+  <script type="text/brightscript"><![CDATA[
+    sub init()
+        m.top.functionName = "run"
+    end sub
+
+    sub run()
+        port = CreateObject("roMessagePort")
+        while true
+            server = CreateObject("roRegistrySection", "tvui").Read("server")
+            if server <> "" then
+                http = CreateObject("roUrlTransfer")
+                http.SetUrl(server + "/api/weather")
+                body = http.GetToString()
+                if body <> "" then
+                    data = ParseJson(body)
+                    if data <> invalid then m.top.result = data
+                end if
+            end if
+            wait(10 * 60 * 1000, port)
+        end while
+    end sub
+  ]]></script>
+</component>

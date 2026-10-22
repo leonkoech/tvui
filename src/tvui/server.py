@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 from tvui import config
 from tvui.soundbar import VizioSoundbar, find_soundbars
-from tvui.sony import IRCC, TV, discover, wake, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
+from tvui.sony import IRCC, TV, discover, wake, find_roku, roku_active_app, roku_casting, roku_input as roku_send_input, roku_key, roku_launch
 
 # Remote buttons that go to the Roku while the TV shows its input.
 # Volume, mute and power always stay with the TV.
@@ -36,7 +36,7 @@ def make_handler(cfg, tv):
             elif t["action"] == "input":
                 watching["uri"], watching["home"] = t["value"], False
                 if t["value"] == roku_input():
-                    roku.update(mode="free", since=time.time())
+                    roku.update(mode="free", since=time.time(), app_seen=False, home_seen=0)
                 tv.set_input(t["value"])
                 if t["value"] == roku_input():
                     hand_roku_back()  # straight to the Roku's home screen, not the relay
@@ -135,6 +135,22 @@ def make_handler(cfg, tv):
     def police_roku():
         if not cfg.get("roku_relay") or roku_input() is None or not watching["tv_on"]:
             return
+        try:
+            casting = roku_casting(cfg.get("roku"))
+        except Exception:
+            casting = False
+        if casting:
+            roku["home_seen"] = 0
+            if watching["uri"] != roku_input():
+                # Someone started AirPlay or screen mirroring to the Roku: show it.
+                roku.update(mode="app", app_seen=True, since=time.time())
+                watching["uri"], watching["home"] = roku_input(), False
+                try:
+                    tv.set_input(roku_input())
+                    print("AirPlay/mirroring started: switched the TV to the Roku", flush=True)
+                except Exception as e:
+                    print(f"couldn't switch to the Roku for mirroring: {e}", flush=True)
+            return
         if time.time() < sony_menu["until"]:
             return  # someone is in the Sony menu; leave the TV alone
         recent = time.time() - roku["since"] < 6  # the TV reports its old input for a moment
@@ -144,6 +160,18 @@ def make_handler(cfg, tv):
             ensure_relay()
             return
         if roku["mode"] == "free":
+            # The Roku tile: browse freely, but once something was opened and the Roku is
+            # back on its own home screen (its Home button), return to tvui.
+            try:
+                app = roku_active_app(cfg.get("roku"))
+            except Exception:
+                return
+            if app not in (None, "home", "dev"):
+                roku["app_seen"], roku["home_seen"] = True, 0
+            elif app == "home" and roku.get("app_seen"):
+                roku["home_seen"] = roku.get("home_seen", 0) + 1
+                if roku["home_seen"] >= 3:
+                    go_home("back on the Roku home after using it")
             return
         try:
             app = roku_active_app(cfg.get("roku"))
@@ -151,9 +179,12 @@ def make_handler(cfg, tv):
             return
         if roku["mode"] == "app":
             if app not in (None, "home", "dev"):
-                roku["app_seen"] = True
+                roku["app_seen"], roku["home_seen"] = True, 0
             elif app == "home" and roku["app_seen"]:
-                go_home("left the Roku app")
+                # Only after ~1.5 s on the Roku home: AirPlay flickers there while connecting.
+                roku["home_seen"] = roku.get("home_seen", 0) + 1
+                if roku["home_seen"] >= 3:
+                    go_home("left the Roku app")
         elif app == "home" and not recent:
             # (Only the Roku's own home: with just the relay up, the TV is usually on the
             # Roku's input behind its own menu or settings, which must be left alone.)
@@ -175,6 +206,8 @@ def make_handler(cfg, tv):
             # The address the *Roku* can reach us on (the TV may sit on another network,
             # e.g. wired to this machine, while the Roku is on Wi-Fi).
             relay["server"] = relay["server"] or f"http://{local_ip(cfg['roku'])}:{cfg['port']}"
+            if roku_casting(cfg.get("roku")):
+                return  # never interrupt AirPlay or screen mirroring
             if roku_active_app(cfg.get("roku")) != "dev":
                 relay["last"] = time.time()
                 roku_launch(cfg.get("roku"), "dev", {"server": relay["server"]})
@@ -337,6 +370,16 @@ def make_handler(cfg, tv):
                               **({"value": t["value"]} if t["action"] == "input" else {}))
                          for t in cfg["tiles"]]
                 return self._send(200, json.dumps(tiles))
+            if url.path == "/api/weather":
+                from tvui import weather
+                try:
+                    if not cfg.get("weather"):
+                        cfg["weather"] = weather.locate()
+                        config.save(cfg)
+                    data = weather.current(cfg["weather"], cfg["weather"].get("unit", "fahrenheit"))
+                except Exception as e:
+                    return self._send(502, json.dumps({"error": str(e)}))
+                return self._send(200, json.dumps(data))
             if url.path == "/api/inputs":
                 # Which external inputs have a live device: {"extInput:hdmi?port=2": false, ...}
                 try:

@@ -211,6 +211,13 @@ def roku_input(ip, params):
     urllib.request.urlopen(req, timeout=4).read()
 
 
+def roku_casting(ip):
+    """True while AirPlay or screen mirroring has the Roku (the app tvui must never interrupt)."""
+    with urllib.request.urlopen(f"http://{ip}:8060/query/active-app", timeout=4) as r:
+        xml = r.read().decode(errors="ignore")
+    return bool(re.search(r"<app[^>]*>\s*(AirPlay|Screen Mirroring)", xml, re.I)) or 'id="586995"' in xml
+
+
 def roku_active_app(ip):
     """The id of the channel in front on the Roku ("dev" for a sideloaded one),
     "home" for the Roku's own home screen, or None."""
