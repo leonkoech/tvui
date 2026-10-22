@@ -20,6 +20,26 @@ _INSECURE.check_hostname = False
 _INSECURE.verify_mode = ssl.CERT_NONE  # the soundbar's certificate is self-signed
 
 
+def find_soundbars(near_ip, timeout=1.5):
+    """SmartCast soundbars on near_ip's /24, as ["ip:9000", ...]. Used when the address changes."""
+    import socket
+    from concurrent.futures import ThreadPoolExecutor
+
+    prefix = near_ip.rsplit(".", 1)[0]
+
+    def probe(n):
+        host = f"{prefix}.{n}"
+        try:
+            socket.create_connection((host, 9000), timeout=timeout).close()
+            info = VizioSoundbar(host)._call("/state/device/deviceinfo")["ITEMS"][0]["VALUE"]
+            return f"{host}:9000" if info.get("CAPABILITIES", {}).get("type") == "sb" else None
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(64) as pool:
+        return [h for h in pool.map(probe, range(1, 255)) if h]
+
+
 class VizioSoundbar:
     def __init__(self, host):
         self.base = f"https://{host if ':' in host else host + ':9000'}"

@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from tvui import config
-from tvui.soundbar import VizioSoundbar
+from tvui.soundbar import VizioSoundbar, find_soundbars
 from tvui.sony import IRCC, TV, discover, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
 
 # Remote buttons that go to the Roku while the TV shows its input.
@@ -100,14 +100,24 @@ def make_handler(cfg, tv):
     # tile: leaving the app comes back to tvui) or None (any other way: back to tvui).
     roku = {"mode": None, "app_seen": False, "since": 0.0}
 
+    bounces = []
+
     def go_home(why):
-        roku.update(mode=None, since=time.time())
+        # If the Roku keeps grabbing the TV back (HDMI-CEC "1-touch play" switching the
+        # input whenever the relay starts), stop fighting it rather than flip forever.
+        now = time.time()
+        bounces[:] = [t for t in bounces if now - t < 60] + [now]
+        if len(bounces) > 3:
+            roku.update(mode="free", since=now)
+            print("the Roku keeps switching the TV to itself; leaving it there. Turn off "
+                  "Roku Settings > System > Control other devices > 1-touch play", flush=True)
+            return
+        roku.update(mode=None, since=now)
         watching["uri"], watching["home"] = None, True
         relay["last"] = 0.0  # put the relay back while the TV switches
         threading.Thread(target=ensure_relay, daemon=True).start()
         try:
-            tv.open_url(f"http://{local_ip(cfg['tv'])}:{cfg['port']}/")
-            print(f"{why}: back to the home screen", flush=True)
+            open_home(tv, f"http://{local_ip(cfg['tv'])}:{cfg['port']}/", why)
         except Exception as e:
             print(f"couldn't return to the home screen: {e}", flush=True)
 
@@ -182,16 +192,28 @@ def make_handler(cfg, tv):
 
     # A Vizio soundbar on the TV's optical out ignores the TV's volume, so volume and
     # mute go to it directly; power follows the TV.
-    bar = VizioSoundbar(cfg["soundbar"]["host"]) if cfg.get("soundbar") else None
     BAR_KEYS = {"VolumeUp", "VolumeDown", "Mute"}
 
+    def bar_key(name):
+        """Send a key to the soundbar; if it moved (e.g. a new DHCP address), find it again."""
+        try:
+            VizioSoundbar(cfg["soundbar"]["host"]).key(name)
+        except (urllib.error.URLError, OSError):
+            found = find_soundbars(local_ip(cfg["tv"])) + find_soundbars(cfg["soundbar"]["host"].split(":")[0])
+            if not found:
+                raise RuntimeError("soundbar not found on the network")
+            print(f"soundbar moved {cfg['soundbar']['host']} -> {found[0]}", flush=True)
+            cfg["soundbar"]["host"] = found[0]
+            config.save(cfg)
+            VizioSoundbar(found[0]).key(name)
+
     def press(name):
-        if bar and name in BAR_KEYS:
-            bar.key(name)
+        if cfg.get("soundbar") and name in BAR_KEYS:
+            bar_key(name)
             return
-        if bar and name == "PowerOff":
+        if cfg.get("soundbar") and name == "PowerOff":
             try:
-                bar.key("PowerOff")
+                bar_key("PowerOff")
             except Exception as e:
                 print(f"soundbar: couldn't power off: {e}", flush=True)
         if name in HOME_IGNORED and watching["home"]:
@@ -319,34 +341,59 @@ def _web_app_open(tv, home_url):
         return False
 
 
+# Everything that opens the home screen goes through here, so the power-on watcher and
+# the Roku watcher can't fight (each launch reloads the page, and a TV that's mid-switch
+# answers "Illegal State").
+_opener = {"lock": threading.Lock(), "last": 0.0}
+
+
+def open_home(tv, home_url, why, settle=6):
+    """Open the home screen unless it's already up or was opened in the last `settle` s."""
+    with _opener["lock"]:
+        if time.time() - _opener["last"] < settle or _web_app_open(tv, home_url):
+            return True
+        tv.open_url(home_url)
+        _opener["last"] = time.time()
+        print(f"{why}: opened the home screen", flush=True)
+        return True
+
+
 def _home_on_power_loop(cfg, tv, home_url):
     """Open the home screen whenever the TV turns on, instead of its last input."""
-    was_on = tv.power_quick() == "active"
+    # A busy TV can be slow to answer; only call it off after ~8 s of silence, or a slow
+    # answer looks like a fresh power-on and the page gets relaunched over and over.
+    on, misses = tv.power_quick(timeout=3) == "active", 0
     while True:
         time.sleep(1)
-        on = tv.power_quick() == "active"
-        if on and not was_on:
-            if cfg.get("soundbar"):
-                try:
-                    VizioSoundbar(cfg["soundbar"]["host"]).key("PowerOn")
-                except Exception as e:
-                    print(f"soundbar: couldn't power on: {e}", flush=True)
-            # Launch right away and keep retrying: a TV still booting may refuse the
-            # launch, or accept it and then fall back to its last input, so confirm.
-            start = time.time()
-            while time.time() - start < 25:
-                try:
-                    tv.open_url(home_url)
-                    # The TV takes a moment to report the page as open; don't relaunch too soon.
-                    if any(time.sleep(1) or _web_app_open(tv, home_url) for _ in range(3)):
-                        print(f"TV turned on: home screen open after {time.time() - start:.1f}s", flush=True)
-                        break
-                except Exception as e:
-                    print(f"power-on: TV not ready yet ({e})", flush=True)
-                    time.sleep(1)
-            else:
-                print("power-on: gave up opening the home screen after 25s", flush=True)
-        was_on = on
+        if tv.power_quick(timeout=3) == "active":
+            misses, was_on, on = 0, on, True
+        else:
+            misses += 1
+            was_on = on
+            if misses >= 8:
+                on = False
+            continue
+        if was_on:
+            continue
+        if cfg.get("soundbar"):
+            try:
+                VizioSoundbar(cfg["soundbar"]["host"]).key("PowerOn")
+            except Exception as e:
+                print(f"soundbar: couldn't power on: {e}", flush=True)
+        # A booting TV refuses launches ("Illegal State") for a few seconds; retry gently.
+        start = time.time()
+        while time.time() - start < 30:
+            try:
+                open_home(tv, home_url, "TV turned on", settle=0)
+                if any(time.sleep(1) or _web_app_open(tv, home_url) for _ in range(5)):
+                    print(f"TV turned on: home screen up after {time.time() - start:.1f}s", flush=True)
+                    _opener["last"] = time.time()
+                    break
+            except Exception as e:
+                print(f"power-on: TV not ready yet ({e})", flush=True)
+                time.sleep(2)
+        else:
+            print("power-on: gave up opening the home screen after 30s", flush=True)
 
 
 def serve(cfg, open_on_tv=False):
