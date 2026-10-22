@@ -15,7 +15,7 @@ from tvui.sony import IRCC, TV, discover, wake, find_roku, roku_active_app, roku
 # Remote buttons that go to the Roku while the TV shows its input.
 # Volume, mute and power always stay with the TV.
 ROKU_KEYS = {"Up": "Up", "Down": "Down", "Left": "Left", "Right": "Right",
-             "Confirm": "Select", "Return": "Back", "Home": "Home", "Options": "Info",
+             "Confirm": "Select", "Return": "Back", "Options": "Info",
              "Play": "Play", "Pause": "Play", "Rewind": "Rev", "Forward": "Fwd"}
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -242,7 +242,9 @@ def make_handler(cfg, tv):
                 bar_key("PowerOff")
             except Exception as e:
                 print(f"soundbar: couldn't power off: {e}", flush=True)
-        if (name == "Home" and not watching_roku()) or time.time() < sony_menu["until"]:
+        # The remote's menu button always means the Sony menu (the Roku's own home is
+        # only for the Roku tile), and starts "Sony menu mode": keys go to the TV.
+        if name == "Home" or time.time() < sony_menu["until"]:
             sony_menu["until"] = time.time() + 90
         if name in HOME_IGNORED and watching["home"] and time.time() > sony_menu["until"]:
             return
