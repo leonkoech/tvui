@@ -230,6 +230,14 @@ def make_handler(cfg, tv):
             except Exception as e:
                 print(f"soundbar: couldn't power on: {e}", flush=True)
 
+    def roku_is_showing():
+        """False when the Roku only has the relay up: then the TV is on the Roku's input
+        merely behind its own menu/settings, and keys like Back belong to the TV."""
+        try:
+            return roku_active_app(cfg.get("roku")) != "dev"
+        except Exception:
+            return True
+
     def press(name):
         if name == "Power":
             power_toggle()
@@ -256,7 +264,7 @@ def make_handler(cfg, tv):
             else:
                 name = "Play"
         in_sony_menu = time.time() < sony_menu["until"]
-        if name in ROKU_KEYS and watching_roku() and not in_sony_menu:
+        if name in ROKU_KEYS and watching_roku() and not in_sony_menu and roku_is_showing():
             try:
                 on_roku(roku_key, ROKU_KEYS[name])
             except urllib.error.HTTPError as e:
