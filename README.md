@@ -223,7 +223,7 @@ described above.
 On older Bravias (around 2016 and earlier), the TV's own YouTube, Netflix, and
 Prime apps may no longer work. YouTube, for example, shows "page is too large
 to be displayed". If you have a Roku, use `roku` tiles instead: YouTube is
-`837`, Netflix `12`, Prime Video `13`, and Crunchyroll `2595`, Spotify `22297`, Apple Music `637193`, and Apple TV `551012`.
+`837`, Netflix `12`, Prime Video `13`, Crunchyroll `2595`, Spotify `22297`, Apple Music `637193`, and Apple TV `551012`.
 
 Netflix, YouTube, Prime Video, Roku, Crunchyroll, Spotify, Apple Music, and Apple TV
 tiles show their logos, and a
