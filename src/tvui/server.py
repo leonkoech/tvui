@@ -172,7 +172,9 @@ def make_handler(cfg, tv):
         if watching["uri"] == roku_input() or time.time() - relay["last"] < 1.5:
             return
         try:
-            relay["server"] = relay["server"] or f"http://{local_ip(cfg['tv'])}:{cfg['port']}"
+            # The address the *Roku* can reach us on (the TV may sit on another network,
+            # e.g. wired to this machine, while the Roku is on Wi-Fi).
+            relay["server"] = relay["server"] or f"http://{local_ip(cfg['roku'])}:{cfg['port']}"
             if roku_active_app(cfg.get("roku")) != "dev":
                 relay["last"] = time.time()
                 roku_launch(cfg.get("roku"), "dev", {"server": relay["server"]})
