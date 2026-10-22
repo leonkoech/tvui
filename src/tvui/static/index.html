@@ -8,50 +8,50 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 400; src: url(/instrument-sans-400.woff2) format("woff2"), url(/instrument-sans-400.woff) format("woff"); }
   @font-face { font-family: "Instrument Sans"; font-weight: 500; src: url(/instrument-sans-500.woff2) format("woff2"), url(/instrument-sans-500.woff) format("woff"); }
   @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
-  @font-face { font-family: "Instrument Sans"; font-weight: 700; src: url(/instrument-sans-700.woff2) format("woff2"), url(/instrument-sans-700.woff) format("woff"); }
 
-  /* Sized in rem; the script scales 1rem to the screen (16px at 1280 wide). */
-  /* One pre-composited image: pastel wash plus plum scrims. No CSS gradients or full-screen
-     translucent layers, which the TV's 2014 browser renders as blocky tiles. */
+  /* Sized in rem; the script scales 1rem to the screen (24px at 1920 wide).
+     The TV's 2014 browser repaints the whole screen on every change, so everything here
+     is cheap to draw: one pre-composited background (wash + plum scrims baked into
+     bg.jpg), no gradients, blurs, opacity on images or animations, and tile images made
+     at the exact size they're shown. */
   html, body { margin: 0; height: 100%; color: #fff; overflow: hidden;
     font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
-  body { background-color: #e9cfd8; background-image: url(/bg.jpg); background-position: center;
-    background-repeat: no-repeat; -webkit-background-size: cover; background-size: cover; }
+  body { background: #e9cfd8 url(/bg.jpg) no-repeat center; -webkit-background-size: cover; background-size: cover; }
 
   .top { position: absolute; left: 2.5rem; right: 2.5rem; top: 1.6rem; font-size: 1.1rem;
-    color: rgba(255,255,255,.72); text-shadow: 0 .1rem .8rem rgba(40,10,50,.6); }
+    color: rgba(255,255,255,.72); }
   .top .date { float: right; }
 
-  .side { position: absolute; left: 1.6rem; top: 11rem; width: 2.6rem; }
-  .side div { width: 2.6rem; height: 2.6rem; margin-bottom: 1.4rem; border-radius: 1rem;
-    text-align: center; background: rgba(255,255,255,.14); }
-  .side div.cur:after { content: ""; display: block; width: 1.2rem; height: .16rem;
-    margin: .55rem auto 0; background: #F6D6E1; border-radius: .1rem; }
-  .side div.on { background: #fff; }
+  /* Sidebar: bare icons. Dim at rest, the current page a little brighter, the focused
+     one a white disc with a plum icon so it never turns white-on-white. */
+  .side { position: absolute; left: 1.6rem; top: 9.4rem; width: 2.8rem; }
+  .side div { width: 2.8rem; height: 2.8rem; margin-bottom: 1.2rem; border-radius: 1.4rem;
+    text-align: center; opacity: .55; }
+  .side div.cur { opacity: .9; }
+  .side div.on { opacity: 1; background: #fff; }
   .side div.on svg { stroke: #5b2a6e; }
-  .side svg { width: 1.4rem; height: 1.4rem; margin-top: .6rem; }
+  .side svg { width: 1.4rem; height: 1.4rem; margin-top: .7rem; }
 
-  .hero { position: absolute; left: 6.5rem; top: 10rem; width: 34rem; text-shadow: 0 .1rem .8rem rgba(40,10,50,.55); }
+  .hero { position: absolute; left: 6.5rem; top: 8.6rem; width: 40rem; }
   .hero h1 { margin: 0; font-size: 3.2rem; font-weight: 600; letter-spacing: -.05rem; }
-  .hero p { margin: .7rem 0 1.4rem; font-size: 1.05rem; line-height: 1.5; color: rgba(255,255,255,.75); }
-  .hero .btn { display: inline-block; padding: .6rem 1.3rem; border-radius: .4rem;
-    background: #fff; color: #111; font-size: 1rem; font-weight: 600; }
+  .hero p { margin: .6rem 0 0; font-size: 1.1rem; color: rgba(255,255,255,.75); }
 
-  .shelf { position: absolute; left: 6.5rem; bottom: 12.6rem; font-size: 1.35rem; font-weight: 500;
+  .shelf { position: absolute; left: 6.5rem; top: 19.4rem; font-size: 1.3rem; font-weight: 500;
     color: rgba(255,255,255,.85); }
-  .row { position: absolute; left: 6.5rem; right: 0; bottom: 2.4rem; height: 8.6rem; white-space: nowrap;
-    -webkit-transition: margin-left .2s; transition: margin-left .2s; }
-  .cell { display: inline-block; vertical-align: top; width: 11rem; margin-right: 1.2rem; text-align: center; }
-  .tile { width: 11rem; height: 6.24rem; border-radius: .7rem; overflow: hidden;
-    line-height: 6.24rem; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03rem;
-    background-size: cover; background-position: center; opacity: .82;
-    -webkit-transition: -webkit-transform .18s, opacity .18s; transition: transform .18s, opacity .18s; }
-  /* Focused: lift, plus a ring and glow in the app's own color (set in draw()) */
-  .cell.on .tile { opacity: 1; -webkit-transform: scale(1.08); transform: scale(1.08); }
-  .cap { margin-top: .9rem; font-size: .85rem; color: rgba(255,255,255,.75); visibility: hidden; }
-  .cell.on .cap { visibility: visible; color: #fff; }
 
-  .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.5); }
+  /* Grid: 5 per row, scrolls down a row at a time once past two rows. */
+  .view { position: absolute; left: 6.5rem; top: 21.8rem; width: 64rem; height: 18.9rem; overflow: hidden; }
+  .grid { position: absolute; left: 0; top: .4rem; width: 64rem; }
+  .cell { position: relative; float: left; width: 11rem; height: 9.3rem; margin: 0 1.2rem 0 .4rem; text-align: center; }
+  .ring { position: absolute; left: -.28rem; top: -.28rem; width: 11.56rem; height: 6.81rem;
+    border-radius: .95rem; visibility: hidden; }
+  .tile { position: relative; width: 11rem; height: 6.25rem; border-radius: .7rem; overflow: hidden;
+    line-height: 6.25rem; font-size: 1.6rem; font-weight: 600;
+    background-repeat: no-repeat; -webkit-background-size: 100% 100%; background-size: 100% 100%; }
+  .cap { margin-top: .75rem; font-size: .9rem; visibility: hidden; }
+  .cell.on .ring, .cell.on .cap { visibility: visible; }
+
+  .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.6); }
 </style>
 </head>
 <body>
@@ -64,9 +64,9 @@
   <div data-a="off"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></div>
 </div>
 
-<div class="hero"><h1 id="title"></h1><p id="desc"></p><span class="btn">&#9654;&nbsp; Open</span></div>
+<div class="hero"><h1 id="title"></h1><p id="desc"></p></div>
 <div class="shelf">Your apps</div>
-<div class="row" id="row"></div>
+<div class="view"><div class="grid" id="grid"></div></div>
 <div class="note" id="note"></div>
 
 <script>
@@ -76,36 +76,32 @@
 })();
 
 // Known services get their logo tile (img) or brand colors; anything else gets a neutral card.
-// halo: the app's color (r,g,b), used in the focus glow.
+// halo: the app's color (r,g,b), used for the focus ring. tag: the line under the title.
 var BRANDS = {
-  netflix: { bg: "#000", fg: "#e50914", halo: "229,9,20", text: "NETFLIX", img: 1 },
-  youtube: { bg: "#fff", fg: "#ff0000", halo: "255,60,60", text: "YouTube", img: 1 },
-  prime:   { bg: "#1a98ff", fg: "#fff", halo: "26,152,255", text: "prime video", img: 1 },
-  roku:    { bg: "#6c1d7d", fg: "#fff", halo: "170,70,200", text: "Roku", img: 1 },
-  crunchyroll: { bg: "#f47521", fg: "#fff", halo: "244,117,33", text: "crunchyroll", img: 1 },
-  spotify: { bg: "#121212", fg: "#1ed760", halo: "30,215,96", text: "Spotify", img: 1 },
-  applemusic: { bg: "#fa233b", fg: "#fff", halo: "250,35,59", text: "Apple Music", img: 1 },
-  appletv: { bg: "#000", fg: "#fff", halo: "200,200,215", text: "Apple TV", img: 1 },
-  laptop:  { bg: "#1b1b1f", fg: "#fff", halo: "41,168,255", text: "Laptop", img: 1 },
-  hulu:    { bg: "#0b0c0f", fg: "#1ce783", halo: "28,231,131", text: "hulu" },
-  disney:  { bg: "#0e1a5c", fg: "#fff", halo: "60,110,255", text: "Disney+" },
-  plex:    { bg: "#1f1f1f", fg: "#e5a00d", halo: "229,160,13", text: "plex" },
-  max:     { bg: "#002be7", fg: "#fff", halo: "40,90,255", text: "max" }
+  netflix:     { bg: "#000", fg: "#e50914", halo: "229,9,20", text: "NETFLIX", img: 1, tag: "Movies and series" },
+  youtube:     { bg: "#fff", fg: "#ff0000", halo: "255,60,60", text: "YouTube", img: 1, tag: "Videos and live streams" },
+  prime:       { bg: "#1a98ff", fg: "#fff", halo: "26,152,255", text: "prime video", img: 1, tag: "Prime Video originals and rentals" },
+  roku:        { bg: "#6c1d7d", fg: "#fff", halo: "170,70,200", text: "Roku", img: 1, tag: "Your Roku home screen" },
+  crunchyroll: { bg: "#f47521", fg: "#fff", halo: "244,117,33", text: "crunchyroll", img: 1, tag: "Anime, subbed and dubbed" },
+  spotify:     { bg: "#121212", fg: "#1ed760", halo: "30,215,96", text: "Spotify", img: 1, tag: "Music and podcasts" },
+  applemusic:  { bg: "#fa233b", fg: "#fff", halo: "250,35,59", text: "Apple Music", img: 1, tag: "Your library and radio" },
+  appletv:     { bg: "#000", fg: "#fff", halo: "150,90,180", text: "Apple TV", img: 1, tag: "Apple TV+ and your purchases" },
+  laptop:      { bg: "#1b1b1f", fg: "#fff", halo: "41,168,255", text: "Laptop", img: 1, tag: "Show your laptop on the TV" },
+  hulu:        { bg: "#0b0c0f", fg: "#1ce783", halo: "28,231,131", text: "hulu" },
+  disney:      { bg: "#0e1a5c", fg: "#fff", halo: "60,110,255", text: "Disney+" },
+  plex:        { bg: "#1f1f1f", fg: "#e5a00d", halo: "229,160,13", text: "plex" }
 };
-var DESC = {
-  input: "Switch the TV to this HDMI input.",
-  app: "Open the app on the TV.",
-  key: "Open the app on the TV.",
-  roku: "Opens on your Roku."
-};
+var DESC = { input: "Switch the TV to this input", app: "Open on the TV", key: "Open on the TV", roku: "Open on your Roku" };
 
-var tiles = [], sel = 0, inSide = false, sideSel = 0;
-var row = document.getElementById("row"), note = document.getElementById("note");
+var COLS = 5, ROWH = 9.3, VISIBLE_ROWS = 2;
+var tiles = [], sel = 0, inSide = false, sideSel = 0, shown = -1, scrolled = 0;
+var grid = document.getElementById("grid"), note = document.getElementById("note");
 var side = document.getElementById("side").getElementsByTagName("div");
 
 function brand(name) {
   var k = name.toLowerCase().replace(/ /g, "");  // "Apple TV" -> "appletv"
-  for (var b in BRANDS) if (k.indexOf(b) >= 0) { BRANDS[b].key = b; return BRANDS[b]; }
+  if (BRANDS[k]) { BRANDS[k].key = k; return BRANDS[k]; }
+  for (var b in BRANDS) if (k.indexOf(b) === 0) { BRANDS[b].key = b; return BRANDS[b]; }
   return { bg: "#26262b", fg: "#fff", halo: "200,200,215", text: name };
 }
 
@@ -118,9 +114,11 @@ function get(path, done) {
 
 function build() {
   for (var i = 0; i < tiles.length; i++) {
-    var b = brand(tiles[i].name), c = document.createElement("div"), t = document.createElement("div"),
-        cap = document.createElement("div");
+    var b = brand(tiles[i].name), c = document.createElement("div"), r = document.createElement("div"),
+        t = document.createElement("div"), cap = document.createElement("div");
     c.className = "cell";
+    r.className = "ring";
+    r.style.backgroundColor = "rgb(" + b.halo + ")";
     t.className = "tile";
     t.style.backgroundColor = b.bg;
     t.style.color = b.fg;
@@ -128,36 +126,39 @@ function build() {
     else t.innerHTML = b.text;
     cap.className = "cap";
     cap.innerHTML = tiles[i].name;
+    c.appendChild(r);
     c.appendChild(t);
     c.appendChild(cap);
-    row.appendChild(c);
+    grid.appendChild(c);
   }
   draw();
 }
 
 function draw() {
-  var n = row.childNodes;
-  for (var i = 0; i < n.length; i++) {
-    var on = !inSide && i === sel, h = brand(tiles[i].name).halo, t = n[i].firstChild;
-    n[i].className = "cell" + (on ? " on" : "");
-    t.style.boxShadow = t.style.webkitBoxShadow = on
-      ? "0 0 0 .22rem rgb(" + h + "), 0 0 1.6rem .4rem rgba(" + h + ",.65), 0 0 4rem 1.2rem rgba(" + h + ",.35)" : "none";
+  // Only touch what changed: the old and new focused cells, the sidebar, the hero, the scroll.
+  var now = inSide ? -1 : sel;
+  if (now !== shown) {
+    if (shown >= 0) grid.childNodes[shown].className = "cell";
+    if (now >= 0) grid.childNodes[now].className = "cell on";
+    shown = now;
   }
-  for (var j = 0; j < side.length; j++)
-    side[j].className = (j === 0 ? "cur" : "") + (inSide && j === sideSel ? " on" : "");
+  for (var j = 0; j < side.length; j++) {
+    var cls = (j === 0 ? "cur" : "") + (inSide && j === sideSel ? " on" : "");
+    if (side[j].className !== cls) side[j].className = cls;
+  }
   if (!tiles.length) return;
-  var t = tiles[sel];
+  var t = tiles[sel], b = brand(t.name);
   document.getElementById("title").innerHTML = t.name;
-  document.getElementById("desc").innerHTML = t.label || DESC[t.action] || "";
-  // Scroll the row so the selected tile stays on screen (tile + gap = 12.2rem, ~6 fit).
-  row.style.marginLeft = -Math.max(0, sel - 5) * 12.2 + "rem";
+  document.getElementById("desc").innerHTML = b.tag || t.label || DESC[t.action] || "";
+  var r = Math.floor(sel / COLS), first = Math.max(0, r - VISIBLE_ROWS + 1);
+  if (first !== scrolled) { scrolled = first; grid.style.top = (0.4 - first * ROWH) + "rem"; }
 }
 
 function launch() {
   if (inSide) {
     var a = side[sideSel].getAttribute("data-a");
     if (a === "menu") get("/api/key?name=Home");
-    if (a === "off") get("/api/key?name=PowerOff");
+    if (a === "off") get("/api/key?name=Power");
     return;
   }
   var name = tiles[sel].name;
@@ -176,9 +177,14 @@ document.onkeydown = function (e) {
     else if (k === 39) inSide = false;
     else return true;
   } else {
-    if (k === 37) { if (sel === 0) { inSide = true; sideSel = 0; } else sel--; }
-    else if (k === 39) sel = Math.min(n - 1, sel + 1);
-    else if (k !== 38 && k !== 40) return true;
+    if (k === 37) { if (sel % COLS === 0) { inSide = true; sideSel = 0; } else sel--; }
+    else if (k === 39) { if (sel % COLS < COLS - 1 && sel < n - 1) sel++; }
+    else if (k === 38) { if (sel >= COLS) sel -= COLS; }
+    else if (k === 40) {
+      if (sel + COLS < n) sel += COLS;
+      else if (Math.floor(sel / COLS) < Math.floor((n - 1) / COLS)) sel = n - 1;
+    }
+    else return true;
   }
   draw();
   return false;
@@ -200,11 +206,12 @@ function syncClock() {
 function tick() {
   if (clockShift === null) return;  // don't show the TV's wrong time while waiting
   var d = new Date(new Date().getTime() + clockShift), h = d.getUTCHours(), m = d.getUTCMinutes();
-  document.getElementById("clock").innerHTML =
-    (h % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
-  document.getElementById("date").innerHTML =
-    ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
+  var clock = (h % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
+  var date = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
     ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()] + " " + d.getUTCDate();
+  // Only write when it changes: every write repaints the whole screen on this TV.
+  if (clock !== tick.clock) { tick.clock = clock; document.getElementById("clock").innerHTML = clock; }
+  if (date !== tick.date) { tick.date = date; document.getElementById("date").innerHTML = date; }
 }
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
 
