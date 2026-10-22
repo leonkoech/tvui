@@ -332,9 +332,18 @@ def make_handler(cfg, tv):
                 offset = time.localtime(now).tm_gmtoff // 60
                 return self._send(200, json.dumps({"epoch_ms": int(now * 1000), "utc_offset_min": offset}))
             if url.path == "/api/tiles":
-                tiles = [{k: t.get(k) for k in ("name", "action", "label") if t.get(k)}
+                # value is sent for input tiles so the page can match them to /api/inputs
+                tiles = [dict({k: t.get(k) for k in ("name", "action", "label", "panel") if t.get(k)},
+                              **({"value": t["value"]} if t["action"] == "input" else {}))
                          for t in cfg["tiles"]]
                 return self._send(200, json.dumps(tiles))
+            if url.path == "/api/inputs":
+                # Which external inputs have a live device: {"extInput:hdmi?port=2": false, ...}
+                try:
+                    live = {i["uri"]: bool(i.get("connection")) for i in tv.inputs()}
+                except Exception as e:
+                    return self._send(502, json.dumps({"error": str(e)}))
+                return self._send(200, json.dumps(live))
             if url.path not in ("/api/tile", "/api/key", "/api/home"):
                 return self._send(404, '{"error":"not found"}')
             if url.path == "/api/key" and q.get("name") not in IRCC and q.get("name") not in ("PlayPause", "Power"):

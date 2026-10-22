@@ -220,6 +220,14 @@ app grid. They're in the **Inputs** panel instead. To open it, press Left to
 reach the sidebar, move to the Inputs icon, and press OK. Choose an input with
 Up and Down, then press OK. Left closes the panel.
 
+The panel only lists inputs that have a device connected (the Roku is always
+listed). Tiles with `"panel": true` also go there. For Sony's built-in screen
+mirroring, which is what Windows' **Win + K** connects to, add:
+
+```json
+{ "name": "Screen mirroring", "action": "app", "value": "preset://wifi-display", "panel": true }
+```
+
 While the TV shows the Roku's input, the phone remote's D-pad, OK, back, menu,
 options, and playback buttons control the Roku. Volume, mute, and power stay
 with the TV. For this, set the Roku's **Network access** to **Permissive**, as

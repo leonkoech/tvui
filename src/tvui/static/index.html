@@ -103,6 +103,7 @@ var BRANDS = {
   applemusic:  { bg: "#fa233b", fg: "#fff", halo: "250,35,59", text: "Apple Music", img: 1, tag: "Your library and radio" },
   appletv:     { bg: "#000", fg: "#fff", halo: "150,90,180", text: "Apple TV", img: 1, tag: "Apple TV+ and your purchases" },
   laptop:      { bg: "#1b1b1f", fg: "#fff", halo: "41,168,255", text: "Laptop", img: 1, tag: "Show your laptop on the TV" },
+  screenmirroring: { bg: "#5b2a6e", fg: "#fff", halo: "150,90,180", text: "Mirror", img: 1, tag: "Win + K on your laptop" },
   hulu:        { bg: "#0b0c0f", fg: "#1ce783", halo: "28,231,131", text: "hulu" },
   disney:      { bg: "#0e1a5c", fg: "#fff", halo: "60,110,255", text: "Disney+" },
   plex:        { bg: "#1f1f1f", fg: "#e5a00d", halo: "229,160,13", text: "plex" }
@@ -111,7 +112,8 @@ var DESC = { input: "Switch the TV to this input", app: "Open on the TV", key: "
 
 var COLS = 5, ROWH = 9.3, VISIBLE_ROWS = 2;
 var tiles = [], sel = 0, inSide = false, sideSel = 0, shown = -1, scrolled = 0;
-var apps = [], srcs = [], inPanel = false, pSel = 0;  // apps: tile indexes in the grid; srcs: in the Inputs panel
+var apps = [], srcs = [], vis = [], inPanel = false, pSel = 0;  // apps: grid tiles; srcs: panel tiles; vis: srcs shown now
+var live = null;  // {input uri: connected?} from /api/inputs; null = unknown (show everything)
 var grid = document.getElementById("grid"), note = document.getElementById("note");
 var panel = document.getElementById("panel"), plist = document.getElementById("plist");
 var side = document.getElementById("side").getElementsByTagName("div");
@@ -130,24 +132,51 @@ function get(path, done) {
   x.send();
 }
 
-function isSource(t) { return t.action === "input"; }  // HDMI inputs (the Roku itself, a laptop)
+// HDMI inputs (the Roku itself, a laptop) and tiles marked "panel" (screen mirroring)
+function isSource(t) { return t.action === "input" || t.panel; }
+
+// A source is listed if it's not an input, if we can't tell, or if its port has a device.
+// The Roku is always listed: the TV only sees it as connected while it's awake.
+function available(t) {
+  if (t.action !== "input" || !live || !(t.value in live)) return true;
+  return live[t.value] || brand(t.name).key === "roku";
+}
+
+function renderPanel() {
+  plist.innerHTML = "";
+  vis = [];
+  for (var s = 0; s < srcs.length; s++) {
+    var i = srcs[s], t = tiles[i];
+    if (!available(t)) continue;
+    vis.push(i);
+    var b = brand(t.name), pi = document.createElement("div"), pt = document.createElement("div"),
+        txt = document.createElement("div");
+    pi.className = "pi";
+    pt.className = "pt";
+    pt.style.backgroundColor = b.bg;
+    if (b.img) pt.style.backgroundImage = "url(/tile-" + b.key + ".png)";
+    txt.innerHTML = "<b>" + t.name + "</b><span>" + (b.tag || t.label || DESC.input) + "</span>";
+    pi.appendChild(pt);
+    pi.appendChild(txt);
+    plist.appendChild(pi);
+  }
+  pSel = Math.max(0, Math.min(pSel, vis.length - 1));  // stay on a real row if one vanished
+  draw();
+}
+
+function refreshInputs() {
+  get("/api/inputs", function (status, body) {
+    var was = live ? JSON.stringify(live) : "";
+    live = status === 200 ? JSON.parse(body) : null;
+    if (inPanel && JSON.stringify(live || "") !== (was || '""')) renderPanel();
+  });
+}
+setInterval(function () { if (inPanel) refreshInputs(); }, 5000);
 
 function build() {
   for (var i = 0; i < tiles.length; i++) {
     var b = brand(tiles[i].name);
-    if (isSource(tiles[i])) {
-      var pi = document.createElement("div"), pt = document.createElement("div"), txt = document.createElement("div");
-      pi.className = "pi";
-      pt.className = "pt";
-      pt.style.backgroundColor = b.bg;
-      if (b.img) pt.style.backgroundImage = "url(/tile-" + b.key + ".png)";
-      txt.innerHTML = "<b>" + tiles[i].name + "</b><span>" + (b.tag || tiles[i].label || DESC.input) + "</span>";
-      pi.appendChild(pt);
-      pi.appendChild(txt);
-      plist.appendChild(pi);
-      srcs.push(i);
-      continue;
-    }
+    if (isSource(tiles[i])) { srcs.push(i); continue; }
     apps.push(i);
     var c = document.createElement("div"), r = document.createElement("div"),
         t = document.createElement("div"), cap = document.createElement("div");
@@ -182,12 +211,14 @@ function draw() {
     if (side[j].className !== cls) side[j].className = cls;
   }
   panel.className = inPanel ? "open" : "";
+  var hero = document.getElementById("title").parentNode, hv = inPanel ? "hidden" : "visible";
+  if (hero.style.visibility !== hv) hero.style.visibility = hv;  // long titles would peek past the panel
   for (var q = 0; q < plist.childNodes.length; q++) {
     var pc = "pi" + (inPanel && q === pSel ? " on" : "");
     if (plist.childNodes[q].className !== pc) plist.childNodes[q].className = pc;
   }
   if (!apps.length && !srcs.length) return;
-  var t = inPanel ? tiles[srcs[pSel]] : tiles[apps[sel]], b = brand(t.name);
+  var t = inPanel && vis.length ? tiles[vis[pSel]] : tiles[apps[sel]], b = brand(t.name);
   document.getElementById("title").innerHTML = t.name;
   document.getElementById("desc").innerHTML = b.tag || t.label || DESC[t.action] || "";
   var r = Math.floor(sel / COLS), first = Math.max(0, r - VISIBLE_ROWS + 1);
@@ -216,8 +247,8 @@ document.onkeydown = function (e) {
   var k = e.keyCode, n = apps.length;
   if (inPanel) {
     if (k === 38) pSel = Math.max(0, pSel - 1);
-    else if (k === 40) pSel = Math.min(srcs.length - 1, pSel + 1);
-    else if (k === 13) { run(srcs[pSel]); inPanel = false; }
+    else if (k === 40) pSel = Math.min(vis.length - 1, pSel + 1);
+    else if (k === 13) { if (vis.length) run(vis[pSel]); inPanel = false; }
     else if (k === 37 || k === 8 || k === 27 || k === 461) inPanel = false;
     else return true;
     draw();
@@ -225,7 +256,7 @@ document.onkeydown = function (e) {
   }
   if (k === 13) {
     if (inSide && side[sideSel].getAttribute("data-a") === "inputs") {
-      if (srcs.length) { inPanel = true; pSel = 0; draw(); }
+      if (srcs.length) { inPanel = true; pSel = 0; renderPanel(); refreshInputs(); }
     } else launch();
     return false;
   }
@@ -274,7 +305,7 @@ function tick() {
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
 
 get("/api/tiles", function (status, body) {
-  if (status === 200) { tiles = JSON.parse(body); build(); }
+  if (status === 200) { tiles = JSON.parse(body); build(); refreshInputs(); }
   else note.innerHTML = "Can't load tiles";
 });
 </script>
