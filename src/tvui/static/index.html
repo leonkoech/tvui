@@ -80,10 +80,17 @@
     background-color: #f6f3ee; background-image: url(/saver.jpg); background-repeat: no-repeat;
     background-position: center; -webkit-background-size: cover; background-size: cover; }
   #saver.on { display: block; }
-  #saver .wall, #saver .right { position: absolute; width: 16rem; text-align: center;
-    text-shadow: 0 0 .9rem rgba(255,255,255,.95), 0 0 .25rem rgba(255,255,255,.9); }
-  #saver .wall { left: 17.5rem; top: 16.6rem; }
-  #saver .right { left: 44.9rem; top: 15.8rem; }
+  /* Glass behind the text: backdrop-filter isn't supported on this TV, so each pane shows
+     saver-blur.jpg (the photo pre-blurred ~28px, saturate 160%, brightness 104%) lined up
+     with the spot it covers by alignGlass(). */
+  #saver .wall, #saver .right { position: absolute; width: 16rem; padding: 1.4rem 1.6rem; text-align: center;
+    border-radius: 1.6rem; background-color: rgba(255,255,255,.4); background-image: url(/saver-blur.jpg);
+    background-repeat: no-repeat; -webkit-background-size: 80rem 45rem; background-size: 80rem 45rem;
+    border: .06rem solid rgba(255,255,255,.55);
+    box-shadow: inset 0 .08rem 0 rgba(255,255,255,.8), 0 .5rem 1.6rem rgba(35,64,47,.16);
+    text-shadow: 0 0 .5rem rgba(255,255,255,.6); }
+  #saver .wall { left: 15.9rem; top: 15.2rem; }
+  #saver .right { left: 43.3rem; top: 14.4rem; }
   #saver .hello, #saver .names, #saver .clock, #saver .wxt { font-family: "Cormorant Garamond", Georgia, serif; }
   #saver .clock, #saver .wxt { -webkit-font-feature-settings: "lnum" 1, "tnum" 1; font-feature-settings: "lnum" 1, "tnum" 1; }
   #saver .hello { font-size: 1.7rem; font-style: italic; font-weight: 500; line-height: 1.1; color: #3d5747; }
@@ -134,7 +141,6 @@
   <div class="right"><div class="clock" id="stime"></div><div class="day" id="sdate"></div>
     <div class="wx" id="swx"><div><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span></div>
       <div class="wxc" id="swxc"></div><div class="wxr" id="swxr"></div></div></div>
-  <div class="hint"><span class="glass" id="sglass"><span class="tint">Press any button to open your apps</span></span></div>
 </div></div>
 
 <script>
@@ -314,18 +320,13 @@ var SAVER_AFTER = 5 * 60000, lastKey = new Date().getTime(), saverOn = false, dr
 // Small shifts each minute so nothing burns in (rem offsets from the base layout).
 var DRIFT = [[0, 0]];  // text stays on its baked-in glass
 
-new Image().src = "/saver.jpg";  // load it now so the screensaver appears without a blank flash
-document.getElementById("saver").style.visibility = "hidden";  // laid out (fonts load) but not shown
-document.getElementById("saver").className = "on";
-setTimeout(function () {
-  var v = document.getElementById("saver");
-  v.style.visibility = "";
-  if (!saverOn) v.className = "";  // unless it was opened meanwhile
-}, 1500);
 
 function showSaver(on) {
   saverOn = on;
   document.getElementById("saver").className = on ? "on" : "";
+  // The 2014 TV browser stops painting images when too many full-screen ones are decoded,
+  // so drop the home background while the screensaver is up.
+  document.body.style.backgroundImage = on ? "none" : "url(" + WALLPAPERS[wall] + ")";
   if (on) { updateSaver(); refreshWeather(); }
 }
 
@@ -336,8 +337,11 @@ function greeting(h) {
 
 // Line the pre-blurred photo up with the spot the glass pill covers.
 function alignGlass() {
-  var g = document.getElementById("sglass"), r = g.getBoundingClientRect();
-  g.style.backgroundPosition = (-r.left) + "px " + (-r.top) + "px";
+  var panes = [document.querySelector("#saver .wall"), document.querySelector("#saver .right")];
+  for (var i = 0; i < panes.length; i++) {
+    var r = panes[i].getBoundingClientRect();
+    panes[i].style.backgroundPosition = (-r.left) + "px " + (-r.top) + "px";
+  }
 }
 
 function updateSaver() {
