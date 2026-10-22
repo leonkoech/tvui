@@ -65,6 +65,16 @@
   .pi b { display: block; font-size: 1.25rem; font-weight: 600; margin-top: .25rem; }
   .pi span { display: block; font-size: .9rem; margin-top: .15rem; }
 
+  /* Screensaver: after a few idle minutes, the photo with the time, a greeting and the
+     weather (same as the Roku's tvui screensaver). Updates once a minute, so it costs nothing. */
+  #saver { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none;
+    background: #281030 url(/saver.jpg) no-repeat center; -webkit-background-size: cover; background-size: cover; }
+  #saver.on { display: block; }
+  #saver .box { position: absolute; left: 4.6rem; top: 26.6rem; text-shadow: 0 .1rem .9rem rgba(30,10,40,.75); }
+  #saver .t { font-size: 6.2rem; font-weight: 600; letter-spacing: -.15rem; line-height: 1; }
+  #saver .h { font-size: 2rem; font-weight: 600; margin-top: 1.4rem; }
+  #saver .d { font-size: 1.4rem; font-weight: 600; margin-top: .7rem; }
+
   .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.6); }
 </style>
 </head>
@@ -85,6 +95,8 @@
 <div class="view"><div class="grid" id="grid"></div></div>
 <div id="panel"><div class="ph">Inputs</div><div id="plist"></div></div>
 <div class="note" id="note"></div>
+<div id="saver"><div class="box" id="sbox"><div class="t" id="stime"></div><div class="h">Welcome, Coco &amp; Genichi</div>
+  <div class="d" id="sdate"></div><div class="d" id="sweather"></div></div></div>
 
 <script>
 // ES5 only: older Bravia web runtimes don't support modern JS.
@@ -259,7 +271,40 @@ function run(i) {
   });
 }
 
+var SAVER_AFTER = 5 * 60000, lastKey = new Date().getTime(), saverOn = false, drift = 0;
+var SPOTS = [[4.6, 26.6], [6.2, 25.4], [4.6, 24.2], [7.8, 26.6], [6.2, 27.4]];
+
+function showSaver(on) {
+  saverOn = on;
+  document.getElementById("saver").className = on ? "on" : "";
+  if (on) { updateSaver(); refreshWeather(); }
+}
+
+function updateSaver() {
+  if (!saverOn) return;
+  document.getElementById("stime").innerHTML = tick.clock || "";
+  document.getElementById("sdate").innerHTML = tick.date || "";
+  var p = SPOTS[drift++ % SPOTS.length], b = document.getElementById("sbox");
+  b.style.left = p[0] + "rem"; b.style.top = p[1] + "rem";
+}
+
+function refreshWeather() {
+  get("/api/weather", function (status, body) {
+    if (status !== 200) return;
+    var w = JSON.parse(body);
+    document.getElementById("sweather").innerHTML =
+      w.temp + "&deg; " + w.text + (w.place ? " &nbsp;&middot;&nbsp; " + w.place : "");
+  });
+}
+
+setInterval(function () {
+  if (!saverOn && new Date().getTime() - lastKey > SAVER_AFTER) showSaver(true);
+  else if (saverOn) updateSaver();
+}, 60000);
+
 document.onkeydown = function (e) {
+  lastKey = new Date().getTime();
+  if (saverOn) { showSaver(false); return false; }
   var k = e.keyCode, n = apps.length;
   if (inPanel) {
     if (k === 38) pSel = Math.max(0, pSel - 1);
@@ -315,7 +360,10 @@ function tick() {
   var date = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
     ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()] + " " + d.getUTCDate();
   // Only write when it changes: every write repaints the whole screen on this TV.
-  if (clock !== tick.clock) { tick.clock = clock; document.getElementById("clock").innerHTML = clock; }
+  if (clock !== tick.clock) {
+    tick.clock = clock; document.getElementById("clock").innerHTML = clock;
+    if (saverOn) document.getElementById("stime").innerHTML = clock;
+  }
   if (date !== tick.date) { tick.date = date; document.getElementById("date").innerHTML = date; }
 }
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);

@@ -197,6 +197,10 @@ to `/etc/NetworkManager/dnsmasq-shared.d/soundbar.conf`.
 The home screen uses a flower-cottage photo by default. The **wallpaper** icon
 in the sidebar switches to a pastel wash and back, and tvui remembers the choice.
 
+After 5 minutes without a button press, the home screen shows a **screensaver**:
+the photo with the time, a greeting, the date, and the weather, moving a little
+each minute. Any button brings the home screen back.
+
 When the TV turns on, tvui opens the home screen instead of the last input.
 To turn this off, set `"home_on_power_on": false` in the config.
 
