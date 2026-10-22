@@ -463,8 +463,8 @@ function tick() {
 }
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
 
-// Open straight into the screensaver with /#saver (handy for a preview).
-if (location.hash === "#saver") setTimeout(function () { showSaver(true); }, 800);
+// Open straight into the screensaver with /?saver or /#saver (the TV drops #, so use ?saver there).
+if (location.hash === "#saver" || /[?&]saver/.test(location.search)) setTimeout(function () { showSaver(true); }, 800);
 
 get("/api/prefs", function (status, body) {
   if (status === 200) setWallpaper(JSON.parse(body).wallpaper, false);
