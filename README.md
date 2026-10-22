@@ -215,6 +215,11 @@ There are four kinds of action:
 
 `label` is optional, and sets the line shown under the title.
 
+`input` tiles, like the Roku itself or a laptop on HDMI 2, aren't shown in the
+app grid. They're in the **Inputs** panel instead. To open it, press Left to
+reach the sidebar, move to the Inputs icon, and press OK. Choose an input with
+Up and Down, then press OK. Left closes the panel.
+
 While the TV shows the Roku's input, the phone remote's D-pad, OK, back, menu,
 options, and playback buttons control the Roku. Volume, mute, and power stay
 with the TV. For this, set the Roku's **Network access** to **Permissive**, as
