@@ -375,7 +375,7 @@ def make_handler(cfg, tv):
                 if q.get("wallpaper") in ("pastel", "cottage"):
                     cfg["wallpaper"] = q["wallpaper"]
                     config.save(cfg)
-                return self._send(200, json.dumps({"wallpaper": cfg.get("wallpaper", "pastel")}))
+                return self._send(200, json.dumps({"wallpaper": cfg.get("wallpaper", "cottage")}))
             if url.path == "/api/weather":
                 from tvui import weather
                 try:

@@ -16,7 +16,7 @@
      at the exact size they're shown. */
   html, body { margin: 0; height: 100%; color: #fff; overflow: hidden;
     font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; cursor: none; }
-  body { background: #e9cfd8 url(/bg.jpg) no-repeat center; -webkit-background-size: cover; background-size: cover; }
+  body { background: #4a2a52 url(/bg-cottage.jpg) no-repeat center; -webkit-background-size: cover; background-size: cover; }
 
   .top { position: absolute; left: 2.5rem; right: 2.5rem; top: 1.6rem; font-size: 1.1rem;
     color: rgba(255,255,255,.72); }
@@ -227,7 +227,7 @@ function draw() {
 }
 
 // Wallpapers (each has the scrims baked in); the choice is kept on the server.
-var WALLPAPERS = { pastel: "/bg.jpg", cottage: "/bg-cottage.jpg" }, WALL_ORDER = ["pastel", "cottage"], wall = "pastel";
+var WALLPAPERS = { pastel: "/bg.jpg", cottage: "/bg-cottage.jpg" }, WALL_ORDER = ["cottage", "pastel"], wall = "cottage";
 
 function setWallpaper(name, save) {
   if (!WALLPAPERS[name]) return;
