@@ -9,6 +9,12 @@
   @font-face { font-family: "Instrument Sans"; font-weight: 500; src: url(/instrument-sans-500.woff2) format("woff2"), url(/instrument-sans-500.woff) format("woff"); }
   @font-face { font-family: "Instrument Sans"; font-weight: 600; src: url(/instrument-sans-600.woff2) format("woff2"), url(/instrument-sans-600.woff) format("woff"); }
 
+  /* The screensaver's lettering: Cormorant Garamond for the names and numbers, Figtree for the rest. */
+  @font-face { font-family: "Cormorant Garamond"; font-weight: 600; font-style: normal; src: url(/cormorant-garamond-600-normal.woff2) format("woff2"), url(/cormorant-garamond-600-normal.woff) format("woff"); }
+  @font-face { font-family: "Cormorant Garamond"; font-weight: 500; font-style: italic; src: url(/cormorant-garamond-500-italic.woff2) format("woff2"), url(/cormorant-garamond-500-italic.woff) format("woff"); }
+  @font-face { font-family: "Figtree"; font-weight: 400; src: url(/figtree-400-normal.woff2) format("woff2"), url(/figtree-400-normal.woff) format("woff"); }
+  @font-face { font-family: "Figtree"; font-weight: 600; src: url(/figtree-600-normal.woff2) format("woff2"), url(/figtree-600-normal.woff) format("woff"); }
+
   /* Sized in rem; the script scales 1rem to the screen (24px at 1920 wide).
      The TV's 2014 browser repaints the whole screen on every change, so everything here
      is cheap to draw: one pre-composited background (wash + plum scrims baked into
@@ -69,20 +75,26 @@
      the greeting, clock and weather lettered straight onto the plaster in leaf-green, with a
      soft white halo where petals reach in. It only redraws once a minute. */
   #saver { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; color: #23402f;
+    font-family: "Figtree", "Helvetica Neue", Arial, sans-serif;
     background-color: #f6f3ee; background-image: url(/saver.jpg); background-repeat: no-repeat;
     background-position: center; -webkit-background-size: cover; background-size: cover; }
   #saver.on { display: block; }
   #saver .wall, #saver .wx { text-shadow: 0 0 .9rem rgba(255,255,255,.95), 0 0 .25rem rgba(255,255,255,.9); }
   #saver .wall { position: absolute; left: 18.6rem; top: 14.2rem; width: 30rem; }
-  #saver .hello { font-size: 1.5rem; font-weight: 500; color: #3d5747; }
-  #saver .names { font-size: 3.3rem; font-weight: 600; letter-spacing: -.08rem; line-height: 1.05; margin-top: .2rem; }
-  #saver .names b { font-weight: 600; color: #d2537f; }
-  #saver .clock { font-size: 5.4rem; font-weight: 600; letter-spacing: -.16rem; line-height: 1; margin-top: 1.4rem; }
+  #saver .hello, #saver .names, #saver .clock, #saver .wxt { font-family: "Cormorant Garamond", Georgia, serif; }
+  /* Cormorant's numbers are old-style by default (the 4 drops below the line); use even-height ones. */
+  #saver .clock, #saver .wxt { -webkit-font-feature-settings: "lnum" 1, "tnum" 1; font-feature-settings: "lnum" 1, "tnum" 1;
+    font-variant-numeric: lining-nums tabular-nums; }
+  #saver .hello { text-shadow: 0 0 .7rem #fff, 0 0 .3rem #fff, 0 0 .12rem #fff; }
+  #saver .hello { font-size: 1.9rem; font-style: italic; font-weight: 500; color: #3d5747; }
+  #saver .names { font-size: 3.8rem; font-weight: 600; letter-spacing: -.02rem; line-height: .98; margin-top: .1rem; }
+  #saver .names b { font-style: italic; font-weight: 500; color: #d2537f; }
+  #saver .clock { font-size: 5.8rem; font-weight: 600; line-height: .95; margin-top: 1.2rem; }
   #saver .day { font-size: 1.3rem; font-weight: 600; color: #3d5747; margin-top: .5rem; }
   #saver .wx { position: absolute; right: 20.2rem; top: 14.6rem; width: 15rem; text-align: right; visibility: hidden; }
   #saver .wx.ready { visibility: visible; }
   #saver .wxi { display: inline-block; width: 3.6rem; height: 3.6rem; vertical-align: middle; margin-right: .5rem; }
-  #saver .wxt { display: inline-block; vertical-align: middle; font-size: 4.6rem; font-weight: 600; letter-spacing: -.12rem; line-height: 1; }
+  #saver .wxt { display: inline-block; vertical-align: middle; font-size: 5.4rem; font-weight: 600; line-height: 1; }
   #saver .wxc { font-size: 1.35rem; font-weight: 600; margin-top: .3rem; }
   #saver .wxr { font-size: 1.1rem; color: #3d5747; margin-top: .2rem; }
   #saver .hint { position: absolute; left: 0; right: 0; bottom: 2.2rem; text-align: center; }
@@ -296,6 +308,13 @@ var SAVER_AFTER = 5 * 60000, lastKey = new Date().getTime(), saverOn = false, dr
 var DRIFT = [[0, 0], [1.2, -.8], [-.8, .8], [1.6, .6], [.4, -1.2]];
 
 new Image().src = "/saver.jpg";  // load it now so the screensaver appears without a blank flash
+document.getElementById("saver").style.visibility = "hidden";  // laid out (fonts load) but not shown
+document.getElementById("saver").className = "on";
+setTimeout(function () {
+  var v = document.getElementById("saver");
+  v.style.visibility = "";
+  if (!saverOn) v.className = "";  // unless it was opened meanwhile
+}, 1500);
 
 function showSaver(on) {
   saverOn = on;
