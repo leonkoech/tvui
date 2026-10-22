@@ -65,15 +65,29 @@
   .pi b { display: block; font-size: 1.25rem; font-weight: 600; margin-top: .25rem; }
   .pi span { display: block; font-size: .9rem; margin-top: .15rem; }
 
-  /* Screensaver: after a few idle minutes, the photo with the time, a greeting and the
-     weather (same as the Roku's tvui screensaver). Updates once a minute, so it costs nothing. */
-  #saver { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none;
-    background: #281030 url(/saver.jpg) no-repeat center; -webkit-background-size: cover; background-size: cover; }
+  /* Screensaver, "painted on the wall": after a few idle minutes, the plain cottage photo with
+     the greeting, clock and weather lettered straight onto the plaster in leaf-green, with a
+     soft white halo where petals reach in. It only redraws once a minute. */
+  #saver { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: none; color: #23402f;
+    background-color: #f6f3ee; background-image: url(/saver.jpg); background-repeat: no-repeat;
+    background-position: center; -webkit-background-size: cover; background-size: cover; }
   #saver.on { display: block; }
-  #saver .box { position: absolute; left: 4.6rem; top: 26.6rem; text-shadow: 0 .1rem .9rem rgba(30,10,40,.75); }
-  #saver .t { font-size: 6.2rem; font-weight: 600; letter-spacing: -.15rem; line-height: 1; }
-  #saver .h { font-size: 2rem; font-weight: 600; margin-top: 1.4rem; }
-  #saver .d { font-size: 1.4rem; font-weight: 600; margin-top: .7rem; }
+  #saver .wall, #saver .wx { text-shadow: 0 0 .9rem rgba(255,255,255,.95), 0 0 .25rem rgba(255,255,255,.9); }
+  #saver .wall { position: absolute; left: 18.6rem; top: 14.2rem; width: 30rem; }
+  #saver .hello { font-size: 1.5rem; font-weight: 500; color: #3d5747; }
+  #saver .names { font-size: 3.3rem; font-weight: 600; letter-spacing: -.08rem; line-height: 1.05; margin-top: .2rem; }
+  #saver .names b { font-weight: 600; color: #d2537f; }
+  #saver .clock { font-size: 5.4rem; font-weight: 600; letter-spacing: -.16rem; line-height: 1; margin-top: 1.4rem; }
+  #saver .day { font-size: 1.3rem; font-weight: 600; color: #3d5747; margin-top: .5rem; }
+  #saver .wx { position: absolute; right: 20.2rem; top: 14.6rem; width: 15rem; text-align: right; visibility: hidden; }
+  #saver .wx.ready { visibility: visible; }
+  #saver .wxi { display: inline-block; width: 3.6rem; height: 3.6rem; vertical-align: middle; margin-right: .5rem; }
+  #saver .wxt { display: inline-block; vertical-align: middle; font-size: 4.6rem; font-weight: 600; letter-spacing: -.12rem; line-height: 1; }
+  #saver .wxc { font-size: 1.35rem; font-weight: 600; margin-top: .3rem; }
+  #saver .wxr { font-size: 1.1rem; color: #3d5747; margin-top: .2rem; }
+  #saver .hint { position: absolute; left: 0; right: 0; bottom: 2.2rem; text-align: center; }
+  #saver .hint span { display: inline-block; padding: 0 1.4rem; line-height: 2.6rem; border-radius: 1.3rem;
+    font-size: 1.05rem; font-weight: 600; background: rgba(252,250,246,.9); color: #23402f; }
 
   .note { position: absolute; left: 6.5rem; bottom: 1.2rem; font-size: .9rem; color: rgba(255,255,255,.6); }
 </style>
@@ -95,8 +109,14 @@
 <div class="view"><div class="grid" id="grid"></div></div>
 <div id="panel"><div class="ph">Inputs</div><div id="plist"></div></div>
 <div class="note" id="note"></div>
-<div id="saver"><div class="box" id="sbox"><div class="t" id="stime"></div><div class="h">Welcome, Coco &amp; Genichi</div>
-  <div class="d" id="sdate"></div><div class="d" id="sweather"></div></div></div>
+<div id="saver">
+  <div class="wall" id="swall"><div class="hello" id="shello">Welcome home,</div>
+    <div class="names">Coco <b>&amp;</b> Genichi</div>
+    <div class="clock" id="stime"></div><div class="day" id="sdate"></div></div>
+  <div class="wx" id="swx"><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span>
+    <div class="wxc" id="swxc"></div><div class="wxr" id="swxr"></div></div>
+  <div class="hint"><span>Press any button to open your apps</span></div>
+</div></div>
 
 <script>
 // ES5 only: older Bravia web runtimes don't support modern JS.
@@ -272,7 +292,10 @@ function run(i) {
 }
 
 var SAVER_AFTER = 5 * 60000, lastKey = new Date().getTime(), saverOn = false, drift = 0;
-var SPOTS = [[4.6, 26.6], [6.2, 25.4], [4.6, 24.2], [7.8, 26.6], [6.2, 27.4]];
+// Small shifts each minute so nothing burns in (rem offsets from the base layout).
+var DRIFT = [[0, 0], [1.2, -.8], [-.8, .8], [1.6, .6], [.4, -1.2]];
+
+new Image().src = "/saver.jpg";  // load it now so the screensaver appears without a blank flash
 
 function showSaver(on) {
   saverOn = on;
@@ -280,20 +303,57 @@ function showSaver(on) {
   if (on) { updateSaver(); refreshWeather(); }
 }
 
+function greeting(h) {
+  return h >= 5 && h < 12 ? "Good morning," : h >= 12 && h < 17 ? "Good afternoon," :
+         h >= 17 && h < 22 ? "Good evening," : "Welcome home,";
+}
+
 function updateSaver() {
   if (!saverOn) return;
   document.getElementById("stime").innerHTML = tick.clock || "";
-  document.getElementById("sdate").innerHTML = tick.date || "";
-  var p = SPOTS[drift++ % SPOTS.length], b = document.getElementById("sbox");
-  b.style.left = p[0] + "rem"; b.style.top = p[1] + "rem";
+  document.getElementById("sdate").innerHTML = tick.longDate || "";
+  document.getElementById("shello").innerHTML = greeting(tick.hour || 0);
+  var d = DRIFT[drift++ % DRIFT.length];
+  var w = document.getElementById("swall"), x = document.getElementById("swx");
+  w.style.marginLeft = d[0] + "rem"; w.style.marginTop = d[1] + "rem";
+  x.style.marginRight = d[0] + "rem"; x.style.marginTop = d[1] + "rem";
+}
+
+// Weather icons, drawn in the leaf-green ink with a few colored accents.
+var CLOUD = "M7.5 19h9.5a4 4 0 0 0 .4-7.98A5.5 5.5 0 0 0 7 10.6 4.2 4.2 0 0 0 7.5 19z";
+var WX_ICONS = {
+  sun:   '<circle cx="12" cy="12" r="4.5" fill="#ef9d3f" stroke="none"/><path stroke="#ef9d3f" d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+  moon:  '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="#f4d58a" stroke="#c89a3e"/>',
+  part:  '<circle cx="9" cy="8" r="3.6" fill="#ef9d3f" stroke="none"/><path stroke="#ef9d3f" d="M9 1.6v1.3M2.6 8h1.3M4.5 3.5l.9.9M13.5 3.5l-.9.9"/><path fill="#fdfbf7" d="' + CLOUD + '"/>',
+  cloud: '<path fill="#fdfbf7" d="' + CLOUD + '"/>',
+  fog:   '<path stroke="#7d8a84" d="M4 8h16M6 12h12M4 16h16"/>',
+  rain:  '<path fill="#fdfbf7" transform="translate(0,-3)" d="' + CLOUD + '"/><path stroke="#5f84cc" d="M9 19l-1 2.5M13 19l-1 2.5M17 19l-1 2.5"/>',
+  snow:  '<path fill="#fdfbf7" transform="translate(0,-3)" d="' + CLOUD + '"/><circle cx="9" cy="20" r="1" fill="#8fb3e6" stroke="none"/><circle cx="13" cy="21.5" r="1" fill="#8fb3e6" stroke="none"/><circle cx="17" cy="20" r="1" fill="#8fb3e6" stroke="none"/>',
+  storm: '<path fill="#fdfbf7" transform="translate(0,-3)" d="' + CLOUD + '"/><path stroke="#e2952e" d="M13 16l-2.5 3.8h3L11.5 23"/>'
+};
+
+function wxKind(c, day) {
+  if (c === 0) return day ? ["sun", "Clear and sunny"] : ["moon", "Clear"];
+  if (c <= 2) return [day ? "part" : "cloud", "Partly cloudy"];
+  if (c === 3) return ["cloud", "Cloudy"];
+  if (c <= 48) return ["fog", "Foggy"];
+  if (c <= 57) return ["rain", "Drizzle"];
+  if (c <= 67) return ["rain", "Rain"];
+  if (c <= 77) return ["snow", "Snow"];
+  if (c <= 82) return ["rain", "Showers"];
+  if (c <= 86) return ["snow", "Snow showers"];
+  return ["storm", "Thunderstorms"];
 }
 
 function refreshWeather() {
   get("/api/weather", function (status, body) {
-    if (status !== 200) return;
-    var w = JSON.parse(body);
-    document.getElementById("sweather").innerHTML =
-      w.temp + "&deg; " + w.text + (w.place ? " &nbsp;&middot;&nbsp; " + w.place : "");
+    if (status !== 200) return;  // keep the last reading
+    var w = JSON.parse(body), kind = wxKind(w.code, w.day);
+    document.getElementById("swxi").innerHTML = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#23402f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + WX_ICONS[kind[0]] + "</svg>";
+    document.getElementById("swxt").innerHTML = w.temp + "&deg;";
+    document.getElementById("swxc").innerHTML = kind[1] + (w.place ? " in " + w.place : "");
+    document.getElementById("swxr").innerHTML = w.high != null ? "High " + w.high + "&deg;, low " + w.low + "&deg;" : "";
+    document.getElementById("swx").className = "wx ready";
   });
 }
 
@@ -301,6 +361,7 @@ setInterval(function () {
   if (!saverOn && new Date().getTime() - lastKey > SAVER_AFTER) showSaver(true);
   else if (saverOn) updateSaver();
 }, 60000);
+setInterval(function () { if (saverOn) refreshWeather(); }, 15 * 60000);
 
 document.onkeydown = function (e) {
   lastKey = new Date().getTime();
@@ -357,6 +418,9 @@ function tick() {
   if (clockShift === null) return;  // don't show the TV's wrong time while waiting
   var d = new Date(new Date().getTime() + clockShift), h = d.getUTCHours(), m = d.getUTCMinutes();
   var clock = (h % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " AM" : " PM");
+  tick.hour = h;
+  tick.longDate = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
+    ["January","February","March","April","May","June","July","August","September","October","November","December"][d.getUTCMonth()] + " " + d.getUTCDate();
   var date = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getUTCDay()] + ", " +
     ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()] + " " + d.getUTCDate();
   // Only write when it changes: every write repaints the whole screen on this TV.

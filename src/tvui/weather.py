@@ -29,11 +29,15 @@ def locate():
 def current(where, unit="fahrenheit", max_age=600):
     if _cache["data"] and time.time() - _cache["at"] < max_age:
         return _cache["data"]
-    j = _get("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
-             "&current=temperature_2m,weather_code,is_day&temperature_unit=%s"
-             % (where["lat"], where["lon"], unit))["current"]
+    r = _get("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
+             "&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min"
+             "&timezone=auto&forecast_days=1&temperature_unit=%s"
+             % (where["lat"], where["lon"], unit))
+    j, daily = r["current"], r.get("daily", {})
     data = {"temp": round(j["temperature_2m"]), "unit": "F" if unit == "fahrenheit" else "C",
             "text": _TEXT.get(j["weather_code"], ""), "code": j["weather_code"],
-            "day": bool(j.get("is_day", 1)), "place": where.get("place", "")}
+            "day": bool(j.get("is_day", 1)), "place": where.get("place", ""),
+            "high": round(daily["temperature_2m_max"][0]) if daily.get("temperature_2m_max") else None,
+            "low": round(daily["temperature_2m_min"][0]) if daily.get("temperature_2m_min") else None}
     _cache.update(at=time.time(), data=data)
     return data
