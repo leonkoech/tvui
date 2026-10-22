@@ -253,7 +253,8 @@ def make_handler(cfg, tv):
                 paused["tv"] = not paused["tv"]
             else:
                 name = "Play"
-        if name in ROKU_KEYS and watching_roku():
+        in_sony_menu = time.time() < sony_menu["until"]
+        if name in ROKU_KEYS and watching_roku() and not in_sony_menu:
             try:
                 on_roku(roku_key, ROKU_KEYS[name])
             except urllib.error.HTTPError as e:
