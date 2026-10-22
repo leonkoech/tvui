@@ -218,7 +218,7 @@ def make_handler(cfg, tv):
                 relay["told"] = True
         except Exception as e:
             relay["last"] = time.time()
-            print(f"relay: {e}", flush=True)
+            print(f"relay: {e!r}", flush=True)
 
     threading.Thread(target=track_input, daemon=True).start()
     threading.Thread(target=watch_roku, daemon=True).start()
@@ -370,6 +370,12 @@ def make_handler(cfg, tv):
                               **({"value": t["value"]} if t["action"] == "input" else {}))
                          for t in cfg["tiles"]]
                 return self._send(200, json.dumps(tiles))
+            if url.path == "/api/prefs":
+                # Home-screen preferences the page can change, e.g. ?wallpaper=cottage
+                if q.get("wallpaper") in ("pastel", "cottage"):
+                    cfg["wallpaper"] = q["wallpaper"]
+                    config.save(cfg)
+                return self._send(200, json.dumps({"wallpaper": cfg.get("wallpaper", "pastel")}))
             if url.path == "/api/weather":
                 from tvui import weather
                 try:

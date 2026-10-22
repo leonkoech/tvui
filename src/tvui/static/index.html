@@ -76,6 +76,7 @@
   <div class="cur" data-a="home"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></div>
   <div data-a="inputs"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h13M12 7l5 5-5 5M21 4v16"/></svg></div>
   <div data-a="menu"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg></div>
+  <div data-a="wallpaper"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.6"/></svg></div>
   <div data-a="off"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></div>
 </div>
 
@@ -225,9 +226,24 @@ function draw() {
   if (first !== scrolled) { scrolled = first; grid.style.top = (0.4 - first * ROWH) + "rem"; }
 }
 
+// Wallpapers (each has the scrims baked in); the choice is kept on the server.
+var WALLPAPERS = { pastel: "/bg.jpg", cottage: "/bg-cottage.jpg" }, WALL_ORDER = ["pastel", "cottage"], wall = "pastel";
+
+function setWallpaper(name, save) {
+  if (!WALLPAPERS[name]) return;
+  wall = name;
+  document.body.style.backgroundImage = "url(" + WALLPAPERS[name] + ")";
+  if (save) get("/api/prefs?wallpaper=" + name);
+}
+
 function launch() {
   if (inSide) {
     var a = side[sideSel].getAttribute("data-a");
+    if (a === "wallpaper") {
+      var next = WALL_ORDER[(WALL_ORDER.indexOf(wall) + 1) % WALL_ORDER.length];
+      setWallpaper(next, true);
+      return;
+    }
     if (a === "menu") get("/api/key?name=Home");
     if (a === "off") get("/api/key?name=Power");
     return;
@@ -303,6 +319,10 @@ function tick() {
   if (date !== tick.date) { tick.date = date; document.getElementById("date").innerHTML = date; }
 }
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
+
+get("/api/prefs", function (status, body) {
+  if (status === 200) setWallpaper(JSON.parse(body).wallpaper, false);
+});
 
 get("/api/tiles", function (status, body) {
   if (status === 200) { tiles = JSON.parse(body); build(); refreshInputs(); }
