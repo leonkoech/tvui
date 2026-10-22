@@ -110,7 +110,7 @@
 <div id="panel"><div class="ph">Inputs</div><div id="plist"></div></div>
 <div class="note" id="note"></div>
 <div id="saver">
-  <div class="wall" id="swall"><div class="hello" id="shello">Welcome home,</div>
+  <div class="wall" id="swall"><div class="hello" id="shello"></div>
     <div class="names">Coco <b>&amp;</b> Genichi</div>
     <div class="clock" id="stime"></div><div class="day" id="sdate"></div></div>
   <div class="wx" id="swx"><span class="wxi" id="swxi"></span><span class="wxt" id="swxt"></span>
@@ -305,7 +305,7 @@ function showSaver(on) {
 
 function greeting(h) {
   return h >= 5 && h < 12 ? "Good morning," : h >= 12 && h < 17 ? "Good afternoon," :
-         h >= 17 && h < 22 ? "Good evening," : "Welcome home,";
+         h >= 17 && h < 22 ? "Good evening," : "Good night,";
 }
 
 function updateSaver() {
@@ -431,6 +431,9 @@ function tick() {
   if (date !== tick.date) { tick.date = date; document.getElementById("date").innerHTML = date; }
 }
 syncClock(); setInterval(tick, 5000); setInterval(syncClock, 10 * 60000);
+
+// Open straight into the screensaver with /#saver (handy for a preview).
+if (location.hash === "#saver") setTimeout(function () { showSaver(true); }, 800);
 
 get("/api/prefs", function (status, body) {
   if (status === 200) setWallpaper(JSON.parse(body).wallpaper, false);
