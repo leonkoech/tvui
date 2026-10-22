@@ -31,6 +31,25 @@ IRCC = {
 }
 
 
+def wake(mac):
+    """Wake-on-LAN magic packet, sent to every local subnet's broadcast. The TV only
+    listens for it in standby with "Remote Start" on (and most reliably when wired)."""
+    payload = bytes([0xFF] * 6) + bytes.fromhex(mac.replace(":", "").replace("-", "")) * 16
+    addrs = {a[4][0] for a in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)}
+    targets = {"255.255.255.255"} | {a.rsplit(".", 1)[0] + ".255" for a in addrs if not a.startswith("127.")}
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    try:
+        for t in targets:
+            for port in (9, 7):
+                try:
+                    s.sendto(payload, (t, port))
+                except OSError:
+                    pass
+    finally:
+        s.close()
+
+
 def discover(timeout=4, pattern=r"SERVER:.*?(K[DL]{1,2}-\w+|XBR-\w+)"):
     """Return [(ip, model)] for devices whose SSDP reply matches pattern (default: Sony TVs)."""
     msg = ("M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\n"

@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 from tvui import config
 from tvui.soundbar import VizioSoundbar, find_soundbars
-from tvui.sony import IRCC, TV, discover, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
+from tvui.sony import IRCC, TV, discover, wake, find_roku, roku_active_app, roku_input as roku_send_input, roku_key, roku_launch
 
 # Remote buttons that go to the Roku while the TV shows its input.
 # Volume, mute and power always stay with the TV.
@@ -99,6 +99,9 @@ def make_handler(cfg, tv):
     # TV got to the Roku: "free" (Roku tile: use the Roku as you like), "app" (an app
     # tile: leaving the app comes back to tvui) or None (any other way: back to tvui).
     roku = {"mode": None, "app_seen": False, "since": 0.0}
+    # While the Sony menu is open the TV shows its last input (often the Roku) behind it;
+    # don't treat that as wandering onto the Roku. Every key press there extends this.
+    sony_menu = {"until": 0.0}
 
     bounces = []
 
@@ -132,6 +135,8 @@ def make_handler(cfg, tv):
     def police_roku():
         if not cfg.get("roku_relay") or roku_input() is None or not watching["tv_on"]:
             return
+        if time.time() < sony_menu["until"]:
+            return  # someone is in the Sony menu; leave the TV alone
         recent = time.time() - roku["since"] < 6  # the TV reports its old input for a moment
         if watching["uri"] != roku_input():
             if roku["mode"] and not recent:
@@ -189,6 +194,7 @@ def make_handler(cfg, tv):
     # On the tvui home screen, Back would close the page (the TV's web runtime treats it
     # as "exit app") and Options opens the Sony menu over it; neither is ever wanted there.
     HOME_IGNORED = {"Return", "Options"}
+    # ...except while the Sony menu is open over it (see sony_menu), where Back navigates.
 
     # A Vizio soundbar on the TV's optical out ignores the TV's volume, so volume and
     # mute go to it directly; power follows the TV.
@@ -207,7 +213,27 @@ def make_handler(cfg, tv):
             config.save(cfg)
             VizioSoundbar(found[0]).key(name)
 
+    def power_toggle():
+        """The remote's power button: off when the TV is on, wake everything when it's off."""
+        if tv.power_quick(timeout=3) == "active":
+            press("PowerOff")
+            return
+        if cfg.get("tv_mac"):
+            wake(cfg["tv_mac"])
+        try:  # with Remote Start on, the TV's API stays up in standby and can power it on
+            tv.rpc("system", "setPowerStatus", [{"status": True}])
+        except Exception:
+            pass
+        if cfg.get("soundbar"):
+            try:
+                bar_key("PowerOn")
+            except Exception as e:
+                print(f"soundbar: couldn't power on: {e}", flush=True)
+
     def press(name):
+        if name == "Power":
+            power_toggle()
+            return
         if cfg.get("soundbar") and name in BAR_KEYS:
             bar_key(name)
             return
@@ -216,7 +242,9 @@ def make_handler(cfg, tv):
                 bar_key("PowerOff")
             except Exception as e:
                 print(f"soundbar: couldn't power off: {e}", flush=True)
-        if name in HOME_IGNORED and watching["home"]:
+        if (name == "Home" and not watching_roku()) or time.time() < sony_menu["until"]:
+            sony_menu["until"] = time.time() + 90
+        if name in HOME_IGNORED and watching["home"] and time.time() > sony_menu["until"]:
             return
         if name == "PlayPause":
             # The Roku's Play key is a real toggle; the TV has none, so alternate.
@@ -294,7 +322,7 @@ def make_handler(cfg, tv):
                 return self._send(200, json.dumps(tiles))
             if url.path not in ("/api/tile", "/api/key", "/api/home"):
                 return self._send(404, '{"error":"not found"}')
-            if url.path == "/api/key" and q.get("name") not in IRCC and q.get("name") != "PlayPause":
+            if url.path == "/api/key" and q.get("name") not in IRCC and q.get("name") not in ("PlayPause", "Power"):
                 return self._send(400, '{"error":"unknown key"}')
             if url.path == "/api/key":
                 keys.put(q["name"])

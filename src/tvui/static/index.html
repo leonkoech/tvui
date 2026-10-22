@@ -46,7 +46,7 @@
     line-height: 6.24rem; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03rem;
     background-size: cover; background-position: center; opacity: .82;
     -webkit-transition: -webkit-transform .18s, opacity .18s; transition: transform .18s, opacity .18s; }
-  /* Focused: lift, blush ring, pink glow tinged with the app's color */
+  /* Focused: lift, plus a ring and glow in the app's own color (set in draw()) */
   .cell.on .tile { opacity: 1; -webkit-transform: scale(1.08); transform: scale(1.08); }
   .cap { margin-top: .9rem; font-size: .85rem; color: rgba(255,255,255,.75); visibility: hidden; }
   .cell.on .cap { visibility: visible; color: #fff; }
@@ -138,7 +138,7 @@ function draw() {
     var on = !inSide && i === sel, h = brand(tiles[i].name).halo, t = n[i].firstChild;
     n[i].className = "cell" + (on ? " on" : "");
     t.style.boxShadow = t.style.webkitBoxShadow = on
-      ? "0 0 0 .2rem #F6D6E1, 0 0 1.6rem .35rem rgba(246,214,225,.5), 0 0 3.6rem 1rem rgba(" + h + ",.28)" : "none";
+      ? "0 0 0 .22rem rgb(" + h + "), 0 0 1.6rem .4rem rgba(" + h + ",.65), 0 0 4rem 1.2rem rgba(" + h + ",.35)" : "none";
   }
   for (var j = 0; j < side.length; j++)
     side[j].className = (j === 0 ? "cur" : "") + (inSide && j === sideSel ? " on" : "");
