@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- The tvui look on the Roku: the cottage photo with the time, a greeting and the weather,
-     in Instrument Sans. Used by the screensaver and behind the relay. -->
+<!-- The tvui screensaver look on the Roku, matching the TV page: the softly blurred cottage
+     photo (with "Coco & Genichi" baked in), a greeting by time of day, and the time, date
+     and weather lettered in leaf-green. Used by the screensaver and behind the relay. -->
 <component name="Backdrop" extends="Group">
   <interface>
-    <field id="greeting" type="string" value="Welcome, Coco &amp; Genichi" onChange="onGreeting" />
     <field id="drift" type="boolean" value="false" />
   </interface>
   <script type="text/brightscript"><![CDATA[
     sub init()
-        m.text = m.top.findNode("text")
-        m.time = m.top.findNode("time")
-        m.date = m.top.findNode("date")
         m.hello = m.top.findNode("hello")
-        m.weather = m.top.findNode("weather")
-        m.hello.text = m.top.greeting
+        m.time = m.top.findNode("time")
+        m.ampm = m.top.findNode("ampm")
+        m.date = m.top.findNode("date")
+        m.icon = m.top.findNode("icon")
+        m.temp = m.top.findNode("temp")
+        m.cond = m.top.findNode("cond")
+        m.range = m.top.findNode("range")
 
         m.clock = m.top.findNode("clock")
         m.clock.observeField("fire", "tick")
         m.clock.control = "start"
-        m.ticks = 0
         tick()
 
         m.fetch = CreateObject("roSGNode", "WeatherTask")
         m.fetch.observeField("result", "onWeather")
         m.fetch.control = "RUN"
-    end sub
-
-    sub onGreeting()
-        m.hello.text = m.top.greeting
     end sub
 
     sub tick()
@@ -37,51 +34,105 @@
         mins = now.GetMinutes()
         h12 = h mod 12
         if h12 = 0 then h12 = 12
-        ampm = "AM"
-        if h >= 12 then ampm = "PM"
         mm = mins.ToStr()
         if mins < 10 then mm = "0" + mm
-        m.time.text = h12.ToStr() + ":" + mm + " " + ampm
-        m.date.text = now.GetWeekday() + ", " + monthName(now.GetMonth()) + " " + now.GetDayOfMonth().ToStr()
-        ' As a screensaver, move the text a little each minute so nothing burns in.
-        m.ticks = m.ticks + 1
-        if m.top.drift and m.ticks mod 6 = 0 then
-            spots = [[110, 640], [150, 610], [110, 580], [190, 640], [150, 660]]
-            p = spots[(m.ticks / 6) mod spots.Count()]
-            m.text.translation = p
+        m.time.text = h12.ToStr() + ":" + mm
+        if h >= 12 then m.ampm.text = "PM" else m.ampm.text = "AM"
+        months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        m.date.text = now.GetWeekday() + ", " + months[now.GetMonth() - 1] + " " + now.GetDayOfMonth().ToStr()
+        if h >= 5 and h < 12 then
+            m.hello.text = "Good morning,"
+        else if h >= 12 and h < 17 then
+            m.hello.text = "Good afternoon,"
+        else if h >= 17 and h < 22 then
+            m.hello.text = "Good evening,"
+        else
+            m.hello.text = "Good night,"
         end if
     end sub
 
-    function monthName(n as Integer) as String
-        names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        return names[n - 1]
-    end function
-
     sub onWeather()
         w = m.fetch.result
-        if w <> invalid and w.temp <> invalid then
-            line = w.temp.ToStr() + Chr(176) + " " + w.text
-            if w.place <> invalid and w.place <> "" then line = line + "  ·  " + w.place
-            m.weather.text = line
+        if w = invalid or w.temp = invalid then return
+        c = w.code
+        day = (w.day = true)
+        kind = "cloud"
+        text = ""
+        if c = 0 then
+            if day then
+                kind = "sun"
+                text = "Clear and sunny"
+            else
+                kind = "moon"
+                text = "Clear"
+            end if
+        else if c <= 2 then
+            if day then kind = "part" else kind = "cloud"
+            text = "Partly cloudy"
+        else if c = 3 then
+            text = "Cloudy"
+        else if c <= 48 then
+            kind = "fog"
+            text = "Foggy"
+        else if c <= 57 then
+            kind = "rain"
+            text = "Drizzle"
+        else if c <= 67 then
+            kind = "rain"
+            text = "Rain"
+        else if c <= 77 then
+            kind = "snow"
+            text = "Snow"
+        else if c <= 82 then
+            kind = "rain"
+            text = "Showers"
+        else if c <= 86 then
+            kind = "snow"
+            text = "Snow showers"
+        else
+            kind = "storm"
+            text = "Thunderstorms"
         end if
+        m.icon.uri = "pkg:/images/wx-" + kind + ".png"
+        m.temp.text = w.temp.ToStr() + Chr(176)
+        if w.place <> invalid and w.place <> "" then text = text + " in " + w.place
+        m.cond.text = text
+        if w.high <> invalid then m.range.text = "High " + w.high.ToStr() + Chr(176) + ", low " + w.low.ToStr() + Chr(176)
     end sub
   ]]></script>
   <children>
     <Poster uri="pkg:/images/cottage.jpg" width="1920" height="1080" />
-    <Group id="text" translation="[110, 640]">
-      <Label id="time" color="0xFFFFFFFF">
-        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="150" />
+
+    <!-- left: greeting above the baked-in names, centered in the wall at x 420..804 -->
+    <Label id="hello" translation="[420, 378]" width="384" horizAlign="center" color="0x3D5747FF">
+      <Font role="font" uri="pkg:/fonts/Cormorant-MediumItalic.ttf" size="41" />
+    </Label>
+
+    <!-- right: centered in the wall at x 1078..1462 -->
+    <LayoutGroup translation="[1270, 486]" layoutDirection="horiz" horizAlignment="center" vertAlignment="bottom" itemSpacings="[8]">
+      <Label id="time" color="0x23402FFF">
+        <Font role="font" uri="pkg:/fonts/Cormorant-SemiBold.ttf" size="120" />
       </Label>
-      <Label id="hello" translation="[6, 190]" color="0xFFFFFFFF">
-        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="48" />
+      <Label id="ampm" color="0x23402FFF">
+        <Font role="font" uri="pkg:/fonts/Cormorant-SemiBold.ttf" size="41" />
       </Label>
-      <Label id="date" translation="[6, 262]" color="0xFFFFFFFF">
-        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="34" />
+    </LayoutGroup>
+    <Label id="date" translation="[1078, 494]" width="384" horizAlign="center" color="0x3D5747FF">
+      <Font role="font" uri="pkg:/fonts/Figtree-SemiBold.ttf" size="28" />
+    </Label>
+    <LayoutGroup translation="[1270, 588]" layoutDirection="horiz" horizAlignment="center" vertAlignment="center" itemSpacings="[8]">
+      <Poster id="icon" width="60" height="60" />
+      <Label id="temp" color="0x23402FFF">
+        <Font role="font" uri="pkg:/fonts/Cormorant-SemiBold.ttf" size="62" />
       </Label>
-      <Label id="weather" translation="[6, 312]" color="0xFFFFFFFF">
-        <Font role="font" uri="pkg:/fonts/InstrumentSans-SemiBold.ttf" size="34" />
-      </Label>
-    </Group>
+    </LayoutGroup>
+    <Label id="cond" translation="[1078, 628]" width="384" horizAlign="center" color="0x23402FFF">
+      <Font role="font" uri="pkg:/fonts/Figtree-SemiBold.ttf" size="26" />
+    </Label>
+    <Label id="range" translation="[1078, 662]" width="384" horizAlign="center" color="0x3D5747FF">
+      <Font role="font" uri="pkg:/fonts/Figtree-Regular.ttf" size="24" />
+    </Label>
+
     <Timer id="clock" repeat="true" duration="10" />
   </children>
 </component>
