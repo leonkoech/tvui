@@ -154,7 +154,9 @@ def make_handler(cfg, tv):
                 roku["app_seen"] = True
             elif app == "home" and roku["app_seen"]:
                 go_home("left the Roku app")
-        elif app in ("home", "dev") and not recent:
+        elif app == "home" and not recent:
+            # (Only the Roku's own home: with just the relay up, the TV is usually on the
+            # Roku's input behind its own menu or settings, which must be left alone.)
             go_home("Roku home is only reachable from the Roku tile")
 
     def watch_roku():
