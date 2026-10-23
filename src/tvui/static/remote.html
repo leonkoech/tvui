@@ -66,11 +66,47 @@
   /* Power: the one warm accent, findable but not tempting */
   .power { background: rgba(255,255,255,.7); }
   .power svg { stroke: var(--rose); }
+
+  /* Device tabs: Auto routes for you; the others talk to one device directly. */
+  .tabs { display: flex; gap: 6px; padding: 5px; border-radius: 24px; background: rgba(255,255,255,.45);
+    border: 1px solid rgba(255,255,255,.7); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .tab { flex: 1; height: 38px; border-radius: 19px; background: transparent; font-size: 14px; font-weight: 600;
+    color: var(--ink); opacity: .7; }
+  .tab.on { background: #fff; opacity: 1; box-shadow: 0 2px 8px var(--shadow); }
+  .main { display: flex; flex-direction: column; gap: 26px; }
+  body.m-sound .main { display: none; }
+  .extra { display: none; flex-direction: column; gap: 12px; }
+  body.m-tv .x-tv, body.m-roku .x-roku, body.m-sound .x-sound { display: flex; }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(78,100,72,.75);
+    margin: 4px 4px -4px; }
+  .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .chips.c3 { grid-template-columns: repeat(3, 1fr); }
+  .chips.c2 { grid-template-columns: repeat(2, 1fr); }
+  .chip { height: 48px; border-radius: 16px; background: var(--glass); border: 1px solid rgba(255,255,255,.7);
+    box-shadow: 0 4px 12px var(--shadow); font-size: 14px; font-weight: 600; transition: transform .12s, background .12s; }
+  .chip.hit { transform: scale(.94); background: #fff; }
+  .chip.sel { background: var(--sage); color: #fff; border-color: var(--sage); }
+  .kb { display: flex; gap: 10px; }
+  .kb input { flex: 1; min-width: 0; height: 48px; border-radius: 16px; border: 1px solid rgba(255,255,255,.8); padding: 0 14px;
+    font: inherit; font-size: 16px; color: var(--ink); background: rgba(255,255,255,.75); outline: none;
+    -webkit-user-select: text; user-select: text; }
+  .kb .chip { width: 72px; }
+  .level { display: flex; align-items: center; gap: 10px; }
+  .level .name { flex: 1; font-size: 15px; font-weight: 600; padding-left: 4px; }
+  .level .val { width: 40px; text-align: center; font-size: 15px; font-weight: 600; }
+  .level .chip { width: 56px; }
+  .big { font-size: 34px; font-weight: 600; text-align: center; letter-spacing: -1px; padding: 8px 0; }
   .msg { text-align: center; font-size: 13px; color: rgba(78,100,72,.8); min-height: 16px; margin-top: -10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab" data-m="auto">Auto</button><button class="tab" data-m="tv">TV</button>
+    <button class="tab" data-m="roku">Roku</button><button class="tab" data-m="sound">Soundbar</button>
+  </div>
+
+  <div class="main">
   <div class="row">
     <button class="pill" data-k="Return" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6"/></svg></button>
     <button class="sq" data-k="Home" aria-label="TV menu"><svg viewBox="0 0 24 24" style="stroke-width:1.6"><path d="M5 8h14M5 12h14M5 16h14"/></svg></button>
@@ -105,32 +141,188 @@
     <button class="pill" data-k="Options" aria-label="Options"><svg viewBox="0 0 24 24" style="stroke-width:2.8"><path d="M12 4v16M5.1 8l13.8 8M5.1 16l13.8-8"/></svg></button>
   </div>
 
+  </div>
+
+  <!-- TV: straight to the Sony -->
+  <div class="extra x-tv">
+    <div class="label">Inputs</div>
+    <div class="chips">
+      <button class="chip" data-d="tv" data-input="extInput:hdmi?port=1">HDMI 1</button>
+      <button class="chip" data-d="tv" data-input="extInput:hdmi?port=2">HDMI 2</button>
+      <button class="chip" data-d="tv" data-input="extInput:hdmi?port=3">HDMI 3</button>
+      <button class="chip" data-d="tv" data-input="extInput:hdmi?port=4">HDMI 4</button>
+    </div>
+    <div class="label">Picture &amp; sound</div>
+    <div class="chips">
+      <button class="chip" data-d="tv" data-k="Display">Info</button>
+      <button class="chip" data-d="tv" data-k="ClosedCaption">CC</button>
+      <button class="chip" data-d="tv" data-k="Wide">Wide</button>
+      <button class="chip" data-d="tv" data-k="Audio">Audio</button>
+      <button class="chip" data-d="tv" data-k="SceneSelect">Scene</button>
+      <button class="chip" data-d="tv" data-k="PicOff">Pic off</button>
+      <button class="chip" data-d="tv" data-k="ChannelDown">CH −</button>
+      <button class="chip" data-d="tv" data-k="ChannelUp">CH +</button>
+    </div>
+    <div class="label">Numbers</div>
+    <div class="chips c3">
+      <button class="chip" data-d="tv" data-k="Num1">1</button><button class="chip" data-d="tv" data-k="Num2">2</button><button class="chip" data-d="tv" data-k="Num3">3</button>
+      <button class="chip" data-d="tv" data-k="Num4">4</button><button class="chip" data-d="tv" data-k="Num5">5</button><button class="chip" data-d="tv" data-k="Num6">6</button>
+      <button class="chip" data-d="tv" data-k="Num7">7</button><button class="chip" data-d="tv" data-k="Num8">8</button><button class="chip" data-d="tv" data-k="Num9">9</button>
+      <button class="chip" data-d="tv" data-k="DOT">·</button><button class="chip" data-d="tv" data-k="Num0">0</button><button class="chip" data-d="tv" data-k="Enter">Enter</button>
+    </div>
+  </div>
+
+  <!-- Roku: straight to the Roku -->
+  <div class="extra x-roku">
+    <div class="label">Type on the Roku</div>
+    <div class="kb">
+      <input id="kbtext" type="text" placeholder="Search, password…" autocomplete="off" autocapitalize="off">
+      <button class="chip" id="kbsend">Send</button>
+    </div>
+    <div class="chips">
+      <button class="chip" data-d="roku" data-k="Backspace">⌫</button>
+      <button class="chip" data-d="roku" data-k="Search">Search</button>
+      <button class="chip" data-d="roku" data-k="InstantReplay">Replay</button>
+      <button class="chip" data-d="roku" data-k="FindRemote">Find remote</button>
+    </div>
+  </div>
+
+  <!-- Soundbar: straight to the Vizio -->
+  <div class="extra x-sound">
+    <div class="big" id="bvol">–</div>
+    <div class="chips c2">
+      <button class="chip" data-d="bar" data-k="PowerOn">On</button>
+      <button class="chip" data-d="bar" data-k="PowerOff">Off</button>
+    </div>
+    <div class="chips c3">
+      <button class="chip" data-d="bar" data-k="VolumeDown">−</button>
+      <button class="chip" data-d="bar" data-k="Mute">Mute</button>
+      <button class="chip" data-d="bar" data-k="VolumeUp">+</button>
+    </div>
+    <div class="label">Input</div>
+    <div class="chips c3" id="binputs">
+      <button class="chip" data-d="bar" data-k="input" data-v="Optical">Optical</button>
+      <button class="chip" data-d="bar" data-k="input" data-v="Bluetooth">Bluetooth</button>
+      <button class="chip" data-d="bar" data-k="input" data-v="USB">USB</button>
+      <button class="chip" data-d="bar" data-k="input" data-v="AUX 1">AUX 1</button>
+      <button class="chip" data-d="bar" data-k="input" data-v="AUX 2">AUX 2</button>
+      <button class="chip" data-d="bar" data-k="input" data-v="Digital">Coaxial</button>
+    </div>
+    <div class="label">Sound</div>
+    <div class="chips" id="bmodes">
+      <button class="chip" data-d="bar" data-k="eq" data-v="Music">Music</button>
+      <button class="chip" data-d="bar" data-k="eq" data-v="Movie">Movie</button>
+      <button class="chip" data-d="bar" data-k="truvolume" id="btv">TruVolume</button>
+      <button class="chip" data-d="bar" data-k="trusurround" id="bts">Surround</button>
+    </div>
+    <div class="level"><span class="name">Bass</span>
+      <button class="chip" data-d="bar" data-k="bass" data-v="-1">−</button><span class="val" id="bbass">0</span>
+      <button class="chip" data-d="bar" data-k="bass" data-v="1">+</button></div>
+    <div class="level"><span class="name">Treble</span>
+      <button class="chip" data-d="bar" data-k="treble" data-v="-1">−</button><span class="val" id="btreble">0</span>
+      <button class="chip" data-d="bar" data-k="treble" data-v="1">+</button></div>
+  </div>
+
   <div class="msg" id="msg"></div>
 </div>
 
 <script>
-var msg = document.getElementById("msg");
+var msg = document.getElementById("msg"), mode = "auto", tvPaused = false;
+try { mode = localStorage.getItem("tvui-mode") || "auto"; } catch (e) {}
+var urlMode = /[?&]mode=(auto|tv|roku|sound)/.exec(location.search);  // e.g. /remote?mode=sound
+if (urlMode) mode = urlMode[1];
 
-function send(path, btn) {
+// What each main button means on each device. Volume, mute and power keep their normal
+// routing (soundbar volume, TV + soundbar power) in every tab.
+var TV = { Return: "Return", Home: "Home", Up: "Up", Down: "Down", Left: "Left", Right: "Right",
+  Confirm: "Confirm", Rewind: "Rewind", Forward: "Forward", Options: "Options" };
+var ROKU = { Return: "Back", Home: "Home", Up: "Up", Down: "Down", Left: "Left", Right: "Right",
+  Confirm: "Select", Rewind: "Rev", Forward: "Fwd", PlayPause: "Play", Options: "Info" };
+var SHARED = { VolumeUp: 1, VolumeDown: 1, Mute: 1, Power: 1 };
+
+function setMode(m) {
+  mode = m;
+  try { localStorage.setItem("tvui-mode", m); } catch (e) {}
+  document.body.className = "m-" + m;
+  document.querySelectorAll(".tab").forEach(function (t) { t.className = "tab" + (t.getAttribute("data-m") === m ? " on" : ""); });
+  if (m === "sound") refreshBar();
+}
+
+function hit(btn) {
   if (navigator.vibrate) navigator.vibrate(8);
   btn.classList.add("hit");
   setTimeout(function () { btn.classList.remove("hit"); }, 160);
+}
+
+function send(path, btn, after) {
+  if (btn) hit(btn);
   fetch(path).then(function (r) {
     return r.json().then(function (j) {
       var problem = r.ok ? j.warn : j.error;
-      msg.textContent = !problem ? "" : /Roku blocks/.test(problem) ? problem : "The TV didn't respond";
+      msg.textContent = !problem ? "" : /Roku blocks/.test(problem) ? problem : "The device didn't respond";
+      if (after) setTimeout(after, 500);
     });
   }).catch(function () { msg.textContent = "Can't reach tvui. Is the server on?"; });
 }
 
-document.querySelectorAll("button").forEach(function (b) {
+function mainKey(k, btn) {
+  if (mode === "auto" || SHARED[k]) return send("/api/key?name=" + k, btn);
+  if (mode === "tv") {
+    if (k === "PlayPause") { k = tvPaused ? "Play" : "Pause"; tvPaused = !tvPaused; return send("/api/dev?d=tv&k=" + k, btn); }
+    return send("/api/dev?d=tv&k=" + (TV[k] || k), btn);
+  }
+  if (mode === "roku") return send("/api/dev?d=roku&k=" + (ROKU[k] || k), btn);
+}
+
+function devKey(btn) {
+  var d = btn.getAttribute("data-d"), q = "/api/dev?d=" + d;
+  if (btn.hasAttribute("data-input")) q += "&input=" + encodeURIComponent(btn.getAttribute("data-input"));
+  if (btn.hasAttribute("data-k")) q += "&k=" + btn.getAttribute("data-k");
+  if (btn.hasAttribute("data-v")) q += "&v=" + encodeURIComponent(btn.getAttribute("data-v"));
+  send(q, btn, d === "bar" ? refreshBar : null);
+}
+
+// Soundbar tab: show its current volume, input, mode and levels.
+function refreshBar() {
+  fetch("/api/bar").then(function (r) { return r.json(); }).then(function (b) {
+    if (b.error) { document.getElementById("bvol").textContent = "Soundbar offline"; return; }
+    document.getElementById("bvol").textContent = !b.on ? "Off" : b.mute === "On" ? "Muted" : "Volume " + b.volume;
+    document.getElementById("bbass").textContent = b.bass;
+    document.getElementById("btreble").textContent = b.treble;
+    document.querySelectorAll("#binputs .chip").forEach(function (c) { c.classList.toggle("sel", c.getAttribute("data-v") === b.input); });
+    document.querySelectorAll("#bmodes [data-k=eq]").forEach(function (c) { c.classList.toggle("sel", c.getAttribute("data-v") === b.eq); });
+    document.getElementById("btv").classList.toggle("sel", b.truvolume === "On");
+    document.getElementById("bts").classList.toggle("sel", b.trusurround === "On");
+  }).catch(function () {});
+}
+
+document.querySelectorAll(".tab").forEach(function (t) {
+  t.addEventListener("pointerdown", function (e) { e.preventDefault(); setMode(t.getAttribute("data-m")); });
+});
+
+document.querySelectorAll(".main button").forEach(function (b) {
   b.addEventListener("pointerdown", function (e) {
     e.preventDefault();
-    var k = b.getAttribute("data-k");
     if (b.hasAttribute("data-home")) return send("/api/home", b);
-    send("/api/key?name=" + k, b);
+    mainKey(b.getAttribute("data-k"), b);
   });
 });
+
+document.querySelectorAll(".extra [data-d]").forEach(function (b) {
+  b.addEventListener("pointerdown", function (e) { e.preventDefault(); devKey(b); });
+});
+
+// Roku keyboard: sends the typed text as key presses.
+function sendText() {
+  var box = document.getElementById("kbtext");
+  if (!box.value) return;
+  send("/api/dev?d=roku&text=" + encodeURIComponent(box.value), document.getElementById("kbsend"));
+  box.value = "";
+}
+document.getElementById("kbsend").addEventListener("pointerdown", function (e) { e.preventDefault(); sendText(); });
+document.getElementById("kbtext").addEventListener("keydown", function (e) { if (e.key === "Enter") sendText(); });
+
+setMode(mode);
 </script>
 </body>
 </html>

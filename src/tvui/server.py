@@ -102,6 +102,7 @@ def make_handler(cfg, tv):
     # While the Sony menu is open the TV shows its last input (often the Roku) behind it;
     # don't treat that as wandering onto the Roku. Every key press there extends this.
     sony_menu = {"until": 0.0}
+    roku_manual = {"until": 0.0}  # the phone remote's Roku tab is in use
 
     bounces = []
 
@@ -153,6 +154,8 @@ def make_handler(cfg, tv):
             return
         if time.time() < sony_menu["until"]:
             return  # someone is in the Sony menu; leave the TV alone
+        if time.time() < roku_manual["until"]:
+            return  # the phone remote's Roku tab is driving the Roku
         recent = time.time() - roku["since"] < 6  # the TV reports its old input for a moment
         if watching["uri"] != roku_input():
             if roku["mode"] and not recent:
@@ -345,12 +348,64 @@ def make_handler(cfg, tv):
             config.save(cfg)
             act(path, q)
 
+    # Device-specific remote (the phone remote's TV / Roku / Soundbar tabs): sent straight
+    # to that device, bypassing the automatic routing.
+    def focus_roku():
+        """Show the Roku and keep tvui from pulling the TV back while it's being driven."""
+        roku_manual["until"] = time.time() + 120
+        if watching["uri"] != roku_input() and roku_input():
+            roku.update(mode="free", since=time.time(), app_seen=False, home_seen=0)
+            watching["uri"], watching["home"] = roku_input(), False
+            tv.set_input(roku_input())
+        try:
+            if roku_active_app(cfg.get("roku")) == "dev":
+                roku_key(cfg.get("roku"), "Home")  # the relay would echo keys back to us
+        except Exception:
+            pass
+
+    def dev(q):
+        d = q.get("d")
+        if d == "tv":
+            sony_menu["until"] = time.time() + 90  # keys and menus stay with the TV
+            if q.get("input"):
+                watching["uri"], watching["home"] = q["input"], False
+                tv.set_input(q["input"])
+            else:
+                tv.key(q["k"])
+        elif d == "roku":
+            focus_roku()
+            if "text" in q:
+                from urllib.parse import quote
+                for ch in q["text"]:
+                    on_roku(roku_key, "Lit_" + quote(ch, safe=""))
+            else:
+                on_roku(roku_key, q["k"])
+        elif d == "bar" and cfg.get("soundbar"):
+            bar = VizioSoundbar(cfg["soundbar"]["host"])
+            k, v = q.get("k"), q.get("v")
+            if k in ("VolumeUp", "VolumeDown", "Mute"):
+                bar_key(k)
+            elif k in ("PowerOn", "PowerOff"):
+                bar_power(k == "PowerOn")
+            elif k == "input":
+                bar.set_setting("input/current_input", v)
+            elif k == "eq":
+                bar.set_setting("audio/eq", v)
+            elif k in ("bass", "treble", "subwoofer"):
+                bar.adjust("audio/" + k, int(v))
+            elif k in ("truvolume", "trusurround"):
+                cur = bar.get_setting("audio/" + k)
+                bar.set_setting("audio/" + k, "Off" if cur == "On" else "On")
+
     keys, key_error = queue.Queue(), {"msg": None}
 
     def key_worker():
         while True:
             name = keys.get()
             try:
+                if isinstance(name, dict):
+                    dev(name)
+                    continue
                 act_or_rediscover("/api/key", {"name": name})
             except Exception as e:
                 key_error["msg"] = str(e)
@@ -410,6 +465,17 @@ def make_handler(cfg, tv):
                 except Exception as e:
                     return self._send(502, json.dumps({"error": str(e)}))
                 return self._send(200, json.dumps(live))
+            if url.path == "/api/dev":
+                keys.put(q)
+                warn, key_error["msg"] = key_error["msg"], None
+                return self._send(200, json.dumps({"ok": True, "warn": warn} if warn else {"ok": True}))
+            if url.path == "/api/bar":
+                if not cfg.get("soundbar"):
+                    return self._send(404, '{"error":"no soundbar"}')
+                try:
+                    return self._send(200, json.dumps(VizioSoundbar(cfg["soundbar"]["host"]).state()))
+                except Exception as e:
+                    return self._send(502, json.dumps({"error": str(e)}))
             if url.path not in ("/api/tile", "/api/key", "/api/home"):
                 return self._send(404, '{"error":"not found"}')
             if url.path == "/api/key" and q.get("name") not in IRCC and q.get("name") not in ("PlayPause", "Power"):

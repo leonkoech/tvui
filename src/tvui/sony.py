@@ -167,12 +167,19 @@ class TV:
                 return None  # PIN is now on screen
             raise
 
+    def codes(self):
+        """The TV's full remote: {name: IRCC code}, from the TV itself (cached)."""
+        if not getattr(self, "_codes", None):
+            self._codes = {c["name"]: c["value"] for c in self.rpc("system", "getRemoteControllerInfo")[1]}
+        return self._codes
+
     def key(self, name):
+        code = IRCC.get(name) or self.codes()[name]
         soap = (
             '<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
             's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>'
             '<u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1">'
-            f"<IRCCCode>{IRCC[name]}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>")
+            f"<IRCCCode>{code}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>")
         self._post("/sony/IRCC", soap.encode(), self._headers({
             "Content-Type": "text/xml; charset=UTF-8",
             "SOAPACTION": '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}))

@@ -75,6 +75,22 @@ class VizioSoundbar:
     def volume(self):
         return self._call("/menu_native/dynamic/audio_settings/audio/volume")["ITEMS"][0]["VALUE"]
 
+    def get_setting(self, path):
+        return self._call("/menu_native/dynamic/audio_settings/" + path)["ITEMS"][0]["VALUE"]
+
+    def adjust(self, path, delta, lo=-12, hi=12):
+        """Nudge a level such as audio/bass by delta, within lo..hi."""
+        v = max(lo, min(hi, int(self.get_setting(path)) + delta))
+        self.set_setting(path, v)
+        return v
+
+    def state(self):
+        g = self.get_setting
+        return {"on": self.is_on(), "volume": self.volume(), "mute": g("audio/mute"),
+                "input": g("input/current_input"), "eq": g("audio/eq"), "bass": g("audio/bass"),
+                "treble": g("audio/treble"), "truvolume": g("audio/truvolume"),
+                "trusurround": g("audio/trusurround")}
+
     def set_setting(self, path, value):
         """Change a menu setting, e.g. ("system/eco_power", "Off")."""
         url = "/menu_native/dynamic/audio_settings/" + path

@@ -111,6 +111,20 @@ It opens full screen with its own icon, like an app.
 | ⏻ | Power off |
 | ✱ | Options |
 
+The tabs at the top of the phone remote choose where buttons go:
+
+- **Auto** sends each button wherever makes sense: the home screen, the TV's
+  menus, or the Roku while it's showing.
+- **TV** sends straight to the Sony. It adds HDMI 1 to 4, Info, CC, Wide,
+  Audio, Scene, Picture off, channel up and down, and a number pad.
+- **Roku** sends straight to the Roku. It adds a keyboard for typing into
+  search boxes and passwords, plus Backspace, Search, Replay, and Find remote.
+- **Soundbar** controls the Vizio: On and Off, volume, mute, input, sound mode,
+  TruVolume, TruSurround, bass, and treble.
+
+Volume, mute, and power behave the same in every tab. To open the remote on a
+particular tab, add it to the address, for example `/remote?mode=sound`.
+
 The TV's own remote works on the home screen too. Use ← and → to move between
 tiles. Press ← from the first tile to reach the side menu, which has the Sony
 menu and power.
