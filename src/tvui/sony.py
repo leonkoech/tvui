@@ -31,23 +31,41 @@ IRCC = {
 }
 
 
-def wake(mac):
-    """Wake-on-LAN magic packet, sent to every local subnet's broadcast. The TV only
-    listens for it in standby with "Remote Start" on (and most reliably when wired)."""
-    payload = bytes([0xFF] * 6) + bytes.fromhex(mac.replace(":", "").replace("-", "")) * 16
-    addrs = {a[4][0] for a in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)}
-    targets = {"255.255.255.255"} | {a.rsplit(".", 1)[0] + ".255" for a in addrs if not a.startswith("127.")}
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+def _local_ipv4():
+    """This machine's IPv4 addresses with their prefix lengths, e.g. [("10.42.0.1", 24)]."""
+    out = []
     try:
-        for t in targets:
-            for port in (9, 7):
-                try:
-                    s.sendto(payload, (t, port))
-                except OSError:
-                    pass
-    finally:
-        s.close()
+        import subprocess
+        txt = subprocess.run(["ip", "-4", "-o", "addr"], capture_output=True, text=True, timeout=3).stdout
+        out = [(m.group(1), int(m.group(2))) for m in re.finditer(r"inet (\d+\.\d+\.\d+\.\d+)/(\d+)", txt)]
+    except Exception:
+        pass
+    if not out:  # not Linux: fall back to the hostname's addresses, assume /24
+        out = [(a[4][0], 24) for a in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)]
+    return [(a, n) for a, n in out if not a.startswith("127.")]
+
+
+def wake(mac):
+    """Wake-on-LAN magic packet, sent out of every network port (the TV may be wired to this
+    machine while its default route is Wi-Fi). The TV only listens with "Remote Start" on."""
+    payload = bytes([0xFF] * 6) + bytes.fromhex(mac.replace(":", "").replace("-", "")) * 16
+    for addr, prefix in _local_ipv4():
+        ip = int.from_bytes(socket.inet_aton(addr), "big")
+        bcast = socket.inet_ntoa((ip | (0xFFFFFFFF >> prefix if prefix < 32 else 0)).to_bytes(4, "big"))
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            s.bind((addr, 0))
+            for target in (bcast, "255.255.255.255"):
+                for port in (9, 7):
+                    try:
+                        s.sendto(payload, (target, port))
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+        finally:
+            s.close()
 
 
 def discover(timeout=4, pattern=r"SERVER:.*?(K[DL]{1,2}-\w+|XBR-\w+)"):

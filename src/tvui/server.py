@@ -250,11 +250,18 @@ def make_handler(cfg, tv):
             config.save(cfg)
             VizioSoundbar(found[0]).key(name)
 
+    woke = {"at": 0.0}
+
     def power_toggle():
         """The remote's power button: off when the TV is on, wake everything when it's off."""
+        # A TV takes ~20 s to wake; repeated presses meanwhile mustn't turn it back off.
+        if time.time() - woke["at"] < 30:
+            return
         if tv.power_quick(timeout=3) == "active":
             press("PowerOff")
             return
+        woke["at"] = time.time()
+        print("power: waking the TV", flush=True)
         if cfg.get("tv_mac"):
             wake(cfg["tv_mac"])
         try:  # with Remote Start on, the TV's API stays up in standby and can power it on
