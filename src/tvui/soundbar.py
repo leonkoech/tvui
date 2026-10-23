@@ -75,6 +75,14 @@ class VizioSoundbar:
     def volume(self):
         return self._call("/menu_native/dynamic/audio_settings/audio/volume")["ITEMS"][0]["VALUE"]
 
+    def bt_pair(self):
+        """Switch to the Bluetooth input and make the soundbar discoverable for pairing."""
+        self.set_power(True)
+        self.set_setting("input/current_input", "Bluetooth")
+        url = "/menu_native/dynamic/audio_settings/audio/bluetooth_pair"
+        item = self._call(url)["ITEMS"][0]
+        self._call(url, {"REQUEST": "ACTION", "HASHVAL": item["HASHVAL"]}, method="PUT")
+
     def get_setting(self, path):
         return self._call("/menu_native/dynamic/audio_settings/" + path)["ITEMS"][0]["VALUE"]
 

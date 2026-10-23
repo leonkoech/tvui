@@ -389,6 +389,8 @@ def make_handler(cfg, tv):
                 bar_power(k == "PowerOn")
             elif k == "input":
                 bar.set_setting("input/current_input", v)
+            elif k == "btpair":
+                bar.bt_pair()
             elif k == "eq":
                 bar.set_setting("audio/eq", v)
             elif k in ("bass", "treble", "subwoofer"):
