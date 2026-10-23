@@ -270,9 +270,19 @@ def make_handler(cfg, tv):
             pass
         if cfg.get("soundbar"):
             try:
-                bar_key("PowerOn")
+                bar_power(True)
             except Exception as e:
                 print(f"soundbar: couldn't power on: {e}", flush=True)
+
+    def bar_power(on):
+        """Soundbar follows the TV: on with it, off with it, and left alone if already there."""
+        try:
+            changed = VizioSoundbar(cfg["soundbar"]["host"]).set_power(on)
+        except (urllib.error.URLError, OSError):
+            bar_key("PowerOn" if on else "PowerOff")  # rediscovers the soundbar if it moved
+            changed = True
+        if changed:
+            print(f"soundbar: turned {'on' if on else 'off'}", flush=True)
 
     def roku_is_showing():
         """False when the Roku only has the relay up: then the TV is on the Roku's input
@@ -291,7 +301,7 @@ def make_handler(cfg, tv):
             return
         if cfg.get("soundbar") and name == "PowerOff":
             try:
-                bar_key("PowerOff")
+                bar_power(False)
             except Exception as e:
                 print(f"soundbar: couldn't power off: {e}", flush=True)
         # The remote's menu button always means the Sony menu (the Roku's own home is
@@ -485,7 +495,7 @@ def _home_on_power_loop(cfg, tv, home_url):
             continue
         if cfg.get("soundbar"):
             try:
-                VizioSoundbar(cfg["soundbar"]["host"]).key("PowerOn")
+                VizioSoundbar(cfg["soundbar"]["host"]).set_power(True)
             except Exception as e:
                 print(f"soundbar: couldn't power on: {e}", flush=True)
         # A booting TV refuses launches ("Illegal State") for a few seconds; retry gently.

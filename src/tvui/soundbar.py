@@ -59,6 +59,16 @@ class VizioSoundbar:
         self._call("/key_command/", {"KEYLIST": [{"CODESET": codeset, "CODE": code, "ACTION": "KEYPRESS"}]},
                    method="PUT")
 
+    def set_power(self, on):
+        """Make the soundbar on or off, sending nothing if it already is (never a toggle)."""
+        try:
+            if self.is_on() == on:
+                return False
+        except Exception:
+            pass  # state unknown: send the discrete command anyway
+        self.key("PowerOn" if on else "PowerOff")
+        return True
+
     def is_on(self):
         return self._call("/state/device/power_mode")["ITEMS"][0]["VALUE"] == 1
 
